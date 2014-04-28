@@ -24,5 +24,9 @@ var db = {
 };
 
 db.User = db.sequelize.import("./models/user");
+db.Tessel = db.sequelize.import("./models/tessel");
+
+db.User.hasMany(db.Tessel)
+db.Tessel.hasMany(db.User)
 
 module.exports = db;
