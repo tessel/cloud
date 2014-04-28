@@ -18,7 +18,11 @@ var sequelize = new Sequelize(
     }
 );
 
-module.exports = {
+var db = {
   Sequelize: Sequelize,
   sequelize: sequelize
-}
+};
+
+db.User = db.sequelize.import("./models/user");
+
+module.exports = db;
