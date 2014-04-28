@@ -1,0 +1,26 @@
+{
+  "name": "tessel-cloud",
+  "version": "0.0.1",
+  "private": true,
+
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+
+  "devDependencies": {
+    "sinon-chai": "2.5.0",
+    "chai":       "1.9.1",
+    "mocha":      "1.18.2",
+    "sinon":      "1.9.1"
+  },
+
+  "dependencies": {
+    "express": "4.0.0",
+
+    "morgan":         "1.0.0",
+    "body-parser":    "1.0.0",
+
+    "debug":          "0.7.4",
+    "dotenv":         "0.2.8"
+  }
+}
