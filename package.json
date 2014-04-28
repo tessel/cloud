@@ -21,6 +21,9 @@
     "body-parser":    "1.0.0",
 
     "debug":          "0.7.4",
-    "dotenv":         "0.2.8"
+    "dotenv":         "0.2.8",
+
+    "pg":             "3.0.3",
+    "sequelize":      "2.0.0-dev11"
   }
 }

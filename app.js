@@ -11,7 +11,21 @@ var express = require('express'),
 
 var routes = {
   index: require('./routes/index'),
-}
+};
+
+// connect to and synchronize database
+var db = require('./models');
+
+db.sequelize
+  .sync()
+  .complete(function(err) {
+    if (!!err) {
+      console.log(err);
+      process.exit();
+    }
+
+    console.log('DB Synced Successfully')
+  });
 
 var app = express();
 
