@@ -3,6 +3,8 @@
 // first, load environment settings from .env file; if it exists
 require('dotenv').load();
 
+process.env.NODE_ENV || (process.env.NODE_ENV = "development")
+
 var path = require('path');
 
 var express = require('express'),

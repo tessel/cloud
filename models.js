@@ -2,18 +2,15 @@
 
 var Sequelize = require('sequelize');
 
-var db_name = process.env.DB_NAME,
-    db_host = process.env.DB_HOST,
-    db_username = process.env.DB_USERNAME,
-    db_password = process.env.DB_PASSWORD;
+var config = require('./config/db')[process.env.NODE_ENV];
 
 var sequelize = new Sequelize(
-    db_name,
-    db_username,
-    db_password,
+    config.database,
+    config.username,
+    config.password,
     {
       dialect: "postgres",
-      host: db_host,
+      host: config.host,
       port: 5432
     }
 );
