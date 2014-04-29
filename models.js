@@ -23,7 +23,7 @@ var db = {
 db.User = db.sequelize.import("./models/user");
 db.Tessel = db.sequelize.import("./models/tessel");
 
-db.User.hasMany(db.Tessel)
-db.Tessel.hasMany(db.User)
+db.User.hasMany(db.Tessel, { through: 'UsersTessels' });
+db.Tessel.hasMany(db.User, { through: 'UsersTessels' });
 
 module.exports = db;
