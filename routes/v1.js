@@ -1,5 +1,9 @@
 var router = require('express').Router();
 
+var db = require("../models"),
+    User = db.User
+    Tessel = db.Tessel;
+
 // extracts an API key (if present) from a request
 var getAPIKey = function(req) {
   var headerRegex = /^Bearer (\w+)/;
@@ -48,8 +52,21 @@ router.get("/*", function(req, res, next) {
 // # GET /v1/tessels
 //
 // Lists all tessels belonging to the currently authenticated user
-router.get("/devices", function(req, res) {
-  res.json({ api_key: req.api_key });
+router.get("/tessels", function(req, res) {
+  User
+    .find({ where: { api_key: req.api_key } })
+    .success(function(user) {
+      user.getTessels()
+        .success(function(tessels) {
+          var json = [];
+
+          tessels.forEach(function(tessel) {
+            json.push({ id: tessel.device_id });
+          });
+
+          res.json(json);
+        })
+    });
 });
 
 module.exports = router;
