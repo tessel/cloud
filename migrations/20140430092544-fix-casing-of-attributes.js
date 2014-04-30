@@ -13,6 +13,5 @@ module.exports = {
         migration.renameColumn('Users', 'authId', 'auth_id')
           .complete(done)
       });
-    done();
   }
 }
