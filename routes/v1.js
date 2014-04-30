@@ -49,7 +49,7 @@ router.get("/*", function(req, res, next) {
   }
 });
 
-// # GET /v1/tessels
+// GET /v1/tessels
 //
 // Lists all tessels belonging to the currently authenticated user
 router.get("/tessels", function(req, res) {
@@ -64,6 +64,30 @@ router.get("/tessels", function(req, res) {
 
       res.json(json);
     });
+});
+
+// GET /v1/tessels/:device_id
+//
+// Returns data on a specific tessel, if the user has access
+router.get("/tessels/:device_id", function(req, res) {
+  Tessel.find({
+    include: [ User ],
+    where: { device_id: req.params.device_id, }
+  }).success(function(tessel) {
+    var users = tessel.users.filter(function(user) {
+      return user.apiKey === req.api_key;
+    });
+
+    if (users.length === 0) {
+      res.status = 403;
+      res.json({
+        error: "Permission Denied",
+        info: "I didn't recognize that core name or ID"
+      });
+    } else {
+      res.json({ id: tessel.device_id });
+    }
+  });
 });
 
 module.exports = router;
