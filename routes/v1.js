@@ -30,6 +30,14 @@ var getAPIKey = function(req) {
   return false;
 };
 
+var getUser = function(apiKey, callback) {
+  User
+    .find({ where: { apiKey: apiKey } })
+    .success(function(user) {
+      callback(user)
+    });
+}
+
 // intercept and return error for all requests that don't contain an API key
 router.get("/*", function(req, res, next) {
   var json = {
@@ -53,20 +61,19 @@ router.get("/*", function(req, res, next) {
 //
 // Lists all tessels belonging to the currently authenticated user
 router.get("/tessels", function(req, res) {
-  User
-    .find({ where: { apiKey: req.api_key } })
-    .success(function(user) {
-      user.getTessels()
-        .success(function(tessels) {
-          var json = [];
+  getUser(req.api_key, function(user) {
+    user
+      .getTessels()
+      .success(function(tessels) {
+        var json = [];
 
-          tessels.forEach(function(tessel) {
-            json.push({ id: tessel.device_id });
-          });
+        tessels.forEach(function(tessel) {
+          json.push({ id: tessel.device_id })
+        });
 
-          res.json(json);
-        })
-    });
+        res.json(json);
+      });
+  });
 });
 
 module.exports = router;
