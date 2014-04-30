@@ -1,8 +1,12 @@
 var router = require('express').Router();
 
+var fs = require('fs');
+
 var db = require("../models"),
     User = db.User
     Tessel = db.Tessel;
+
+var formidable = require('formidable');
 
 // extracts an API key (if present) from a request
 var getAPIKey = function(req) {
@@ -80,13 +84,42 @@ router.get("/tessels/:device_id", function(req, res) {
 
     if (users.length === 0) {
       res.status = 403;
-      res.json({
+      return res.json({
         error: "Permission Denied",
         info: "I didn't recognize that core name or ID"
       });
-    } else {
-      res.json({ id: tessel.device_id });
     }
+
+    res.json({ id: tessel.device_id });
+  });
+});
+
+// PUT /v1/tessels/:device_id
+//
+// Pushes source to the Tessel
+router.put("/tessels/:device_id", function(req, res) {
+  Tessel.find({
+    include: [ User ],
+    where: { device_id: req.params.device_id, }
+  }).success(function(tessel) {
+    var users = tessel.users.filter(function(user) {
+      return user.apiKey === req.api_key;
+    });
+
+    if (users.length === 0) {
+      res.status = 403;
+      return res.json({
+        error: "Permission Denied",
+        info: "I didn't recognize that core name or ID"
+      });
+    }
+
+    var form = new formidable.IncomingForm();
+
+    form.parse(req, function(err, fields, files) {
+      // uploaded file available under files['null'] for pushing to tessel
+      res.send(fs.readFileSync(files['null'].path))
+    });
   });
 });
 
