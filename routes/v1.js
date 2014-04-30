@@ -31,7 +31,7 @@ var getAPIKey = function(req) {
 };
 
 // intercept and return error for all requests that don't contain an API key
-router.get("/*", function(req, res, next) {
+router.all("/*", function(req, res, next) {
   var json = {
     code: 400,
     error: "invalid_request",
