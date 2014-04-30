@@ -54,18 +54,15 @@ router.get("/*", function(req, res, next) {
 // Lists all tessels belonging to the currently authenticated user
 router.get("/tessels", function(req, res) {
   User
-    .find({ where: { apiKey: req.api_key } })
+    .find({ where: { apiKey: req.api_key }, include: [ Tessel ] })
     .success(function(user) {
-      user.getTessels()
-        .success(function(tessels) {
-          var json = [];
+      var json = [];
 
-          tessels.forEach(function(tessel) {
-            json.push({ id: tessel.device_id });
-          });
+      user.tessels.forEach(function(tessel) {
+        json.push({ id: tessel.device_id });
+      });
 
-          res.json(json);
-        })
+      res.json(json);
     });
 });
 
