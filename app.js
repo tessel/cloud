@@ -13,6 +13,7 @@ var express = require('express'),
 
 var routes = {
   index: require('./routes/index'),
+  users: require('./routes/users'),
   v1: require('./routes/v1')
 };
 
@@ -36,8 +37,9 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 
-app.use('/', routes.index);
-app.use('/v1', routes.v1)
+app.use('/',      routes.index);
+app.use('/users', routes.users);
+app.use('/v1',    routes.v1)
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
