@@ -28,6 +28,12 @@ var errors = {
     error_description: 'Error updating user details.'
   },
 
+  del: {
+    code: 500,
+    error: 'server_error',
+    error_description: 'Error deleting user.'
+  },
+
   missingData: {
     code: 400,
     error: 'invalid_request',
@@ -111,6 +117,40 @@ router.put('/:id', function(req, res) {
             message: "User was updated successfully"
           });
         });
+    });
+});
+
+router.delete('/:id', function(req, res) {
+  var id = req.params.id;
+
+  User
+    .find({ where: { authId: id } })
+
+    .error(function(err) {
+      res.status = 500;
+      return res.json(errors.del);
+    })
+
+    .success(function(user) {
+      if (!user) {
+        res.status = 400;
+        return res.json(errors.userDoesNotExist);
+      }
+
+      user
+        .destroy()
+
+        .error(function(err) {
+          res.status = 500;
+          return res.json(errors.del);
+        })
+
+        .success(function() {
+          return res.json({
+            code: 200,
+            message: "User was deleted successfully"
+          });
+        })
     });
 });
 
