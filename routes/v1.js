@@ -1,6 +1,7 @@
 var router = require('express').Router();
 
-var fs = require('fs');
+var fs = require('fs'),
+    crypto = require('crypto');
 
 var db = require("../models"),
     User = db.User
@@ -63,7 +64,11 @@ router.get("/tessels", function(req, res) {
       var json = [];
 
       user.tessels.forEach(function(tessel) {
-        json.push({ id: tessel.device_id });
+        json.push({
+          id: tessel.device_id,
+          lastPush: tessel.lastPush,
+          lastPushChecksum: tessel.lastPushChecksum
+        });
       });
 
       res.json(json);
@@ -90,7 +95,11 @@ router.get("/tessels/:device_id", function(req, res) {
       });
     }
 
-    res.json({ id: tessel.device_id });
+    res.json({
+      id: tessel.device_id,
+      lastPush: tessel.lastPush,
+      lastPushChecksum: tessel.lastPushChecksum
+    });
   });
 });
 
@@ -117,8 +126,30 @@ router.put("/tessels/:device_id", function(req, res) {
     var form = new formidable.IncomingForm();
 
     form.parse(req, function(err, fields, files) {
-      // uploaded file available under files['null'] for pushing to tessel
-      res.send(fs.readFileSync(files['null'].path))
+      var file;
+
+      for (file in files) break;
+      file = files[file];
+
+      // TODO - actually push to tessel
+
+      var hash = crypto.createHash('md5'),
+          stream = fs.createReadStream(file.path);
+
+      stream.on('data', function (data) {
+        hash.update(data, 'utf8');
+      });
+
+      stream.on('end', function () {
+        tessel.lastPush = new Date();
+        tessel.lastPushChecksum = hash.digest('hex');
+
+        tessel.save();
+
+        res.json({
+          message: "Your code is uploading to your Tessel now."
+        })
+      });
     });
   });
 });
