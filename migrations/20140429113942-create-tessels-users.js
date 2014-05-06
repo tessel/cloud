@@ -1,6 +1,6 @@
 module.exports = {
   up: function(migration, DataTypes, done) {
-    migration.createTable('UsersTessels', {
+    migration.createTable('TesselsUsers', {
       UserId: {
         type: DataTypes.INTEGER,
         allowNull: false
@@ -19,7 +19,7 @@ module.exports = {
   },
 
   down: function(migration, DataTypes, done) {
-    migration.dropTable('UsersTessels')
+    migration.dropTable('TesselsUsers')
     done()
   }
 }
