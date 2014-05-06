@@ -11,11 +11,7 @@ var express = require('express'),
     logger = require('morgan'),
     bodyParser = require('body-parser');
 
-var routes = {
-  index: require('./routes/index'),
-  users: require('./routes/users'),
-  v1: require('./routes/v1')
-};
+var routes = require('./routes');
 
 // connect to and synchronize database
 var db = require('./models');
@@ -37,9 +33,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 
-app.use('/',      routes.index);
-app.use('/users', routes.users);
-app.use('/v1',    routes.v1)
+app.use('/', routes);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {

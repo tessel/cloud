@@ -1,7 +1,13 @@
-var router = require('express').Router();
+var util = require('util');
+
+var ApplicationController = require('./application_controller');
 
 var db = require('../models'),
     User = db.User;
+
+var UsersController = function UsersController () {};
+
+util.inherits(UsersController, ApplicationController);
 
 var errors = {
   userDoesNotExist: {
@@ -41,7 +47,7 @@ var errors = {
   }
 };
 
-router.post('/', function(req, res) {
+UsersController.prototype.create = function(req, res) {
   var data = req.body;
 
   if (!data.id || !data.apiKey) {
@@ -78,9 +84,9 @@ router.post('/', function(req, res) {
           });
         });
     });
-});
+};
 
-router.put('/:id', function(req, res) {
+UsersController.prototype.update = function(req, res) {
   var data = req.body,
       id = req.params.id;
 
@@ -118,9 +124,9 @@ router.put('/:id', function(req, res) {
           });
         });
     });
-});
+};
 
-router.delete('/:id', function(req, res) {
+UsersController.prototype.delete = function(req, res) {
   var id = req.params.id;
 
   User
@@ -152,6 +158,6 @@ router.delete('/:id', function(req, res) {
           });
         })
     });
-});
+};
 
-module.exports = router;
+module.exports = new UsersController();

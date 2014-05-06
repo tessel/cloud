@@ -1,13 +1,18 @@
-var router = require('express').Router();
-
 var fs = require('fs'),
-    crypto = require('crypto');
+    crypto = require('crypto'),
+    util = require('util');
+
+var ApplicationController = require('./application_controller');
 
 var db = require("../models"),
     User = db.User
     Tessel = db.Tessel;
 
 var formidable = require('formidable');
+
+var V1Controller = function V1Controller () {}
+
+util.inherits(V1Controller, ApplicationController);
 
 // extracts an API key (if present) from a request
 var getAPIKey = function(req) {
@@ -36,7 +41,7 @@ var getAPIKey = function(req) {
 };
 
 // intercept and return error for all requests that don't contain an API key
-router.all("/*", function(req, res, next) {
+V1Controller.prototype.auth = function(req, res, next) {
   var json = {
     code: 400,
     error: "invalid_request",
@@ -52,12 +57,10 @@ router.all("/*", function(req, res, next) {
     res.status = 400;
     res.json(json);
   }
-});
+};
 
-// GET /v1/tessels
-//
 // Lists all tessels belonging to the currently authenticated user
-router.get("/tessels", function(req, res) {
+V1Controller.prototype.list = function(req, res) {
   User
     .find({ where: { apiKey: req.api_key }, include: [ Tessel ] })
     .success(function(user) {
@@ -73,12 +76,10 @@ router.get("/tessels", function(req, res) {
 
       res.json(json);
     });
-});
+};
 
-// GET /v1/tessels/:device_id
-//
 // Returns data on a specific tessel, if the user has access
-router.get("/tessels/:device_id", function(req, res) {
+V1Controller.prototype.details = function(req, res) {
   Tessel.find({
     include: [ User ],
     where: { device_id: req.params.device_id, }
@@ -101,12 +102,10 @@ router.get("/tessels/:device_id", function(req, res) {
       lastPushChecksum: tessel.lastPushChecksum
     });
   });
-});
+};
 
-// PUT /v1/tessels/:device_id
-//
 // Pushes source to the Tessel
-router.put("/tessels/:device_id", function(req, res) {
+V1Controller.prototype.push = function(req, res) {
   Tessel.find({
     include: [ User ],
     where: { device_id: req.params.device_id, }
@@ -152,6 +151,6 @@ router.put("/tessels/:device_id", function(req, res) {
       });
     });
   });
-});
+};
 
-module.exports = router;
+module.exports = new V1Controller();
