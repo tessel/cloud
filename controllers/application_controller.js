@@ -12,8 +12,15 @@ var errors = {
     code: 400,
     error: 'invalid_request',
     error_description: 'Request missing necessary data to create/update user.' +
-    'If first time using tessel-cloud, make sure to include api_key, username and password ' +
-    'you used to create your tessel accound.'
+    'If first time using tessel-cloud or you just updated your api_key, make' +
+    'sure to include api_key, username and password you used to create your tessel account.'
+  },
+
+  incorrectApiKey: {
+    code: 400,
+    error: 'invalid_request',
+    error_description: 'The provided api_key param is invalid.' +
+    'Please verify the api_key provided is the correct one.'
   }
 };
 
@@ -21,91 +28,125 @@ var ApplicationController = function ApplicationController() {};
 
 ApplicationController.prototype.oauthAuthentication = function(req, res, next) {
 
+  // OAuth2 authentication process
+  // First we setup the OAuth2 client.
+  // We use the CLIENT_ID and CLIENT_SECRET
+  // defined in .env file.
+  // The rest of the OAuth2 config details can
+  // be found in ./config/oauth.json (server, paths to
+  // different resrouces etc.
+  var clientId = process.env.CLIENT_ID,
+      clientSecret = process.env.CLIENT_SECRET,
+      clientBasicAuth = new Buffer(clientId + ':' + clientSecret ).toString('base64');
+
   var oauth2 = new OAuth2(
-    process.env.CLIENT_ID,
-    process.env.CLIENT_SECRET,
+    clientId,
+    clientSecret,
     oauthConfig.server,
     oauthConfig.authorisePath,
     oauthConfig.tokenPath,
-    null
+    { 'Authorization': 'Basic ' + clientBasicAuth }
   );
 
+  var paramApiKey = req.body.api_key || req.query.api_key,
+      profilePath = oauthConfig.server + oauthConfig.profilePath;
+
+  // Lookup user by api_key provided
   User
-    .find({ where: { apiKey: req.body.api_key } })
+    .find({ where: { apiKey: paramApiKey } })
+    // If success and user found use the stored oauth2 accessToken
+    // to retrieve the current user profile.
     .success(function(user) {
-      if (user){
-        var code = user.refreshToken,
-            oauthOptions = { 'grant_type':'refresh_token' };
-
-        var refreshTokenCB = function (err, accessToken, refreshToken, results) {
-          if (err){
-            return next(err);
-          }
-
-          user.accessToken = accessToken;
-          user.refreshToken = refreshToken;
-
-          restler
-            .get('http://127.0.0.1:3000/users/profile', { access_token: user.accessToken })
-            .on('complete', function(data, response){
-              // TODO: compare api_key received from Oauth provider with param api key before updating
-              // the user, do not update the user if keys do not match and send back error.
-              user
-                .save()
-                .success(function(){
-                  // TODO: continue with request flow if api_keys are a match
-                  next();
-                })
-                .error(function(err){
-                  return next(err);
-                });
-            });
-        };
-
-        oauth2.getOAuthAccessToken(code, oauthOptions, refreshTokenCB);
+      if (user) {
+        restler
+          .get(profilePath, { query: { access_token: user.accessToken } })
+          .on('complete', function(data, response) {
+            // On complete we compare the provided API_KEY to the one retrieved
+            // from the Oauth provider, if they match we allow the request to
+            // continue, if they do not match it is probable the apiKey was
+            // re-generated in OAuth and the user is trying to use and old one,
+            // we throw error and request the correct apiKey to be used.
+            if (data.apiKey == paramApiKey) {
+              next();
+            }else{
+              return res.json(400, errors.incorrectApiKey);
+            }
+          });
       }else{
-        if (!req.body.username || !req.body.password) return res.json(400, errors.missingCreds);
-
-        var code = req.body.password,
-            oauthOptions = {
-              'grant_type': 'password',
-              'username': req.body.username
+        // We use grant type `client_credentials` to avoid asking the user
+        // for username and password on signup and when re-generating the
+        // apiKey. We pass the api_key param received as username to the
+        // OAuth2 server, the server will handle it and look up an user
+        // with it.
+        var oauthOptions = {
+              'grant_type': 'client_credentials',
+              'username': req.body.api_key || req.query.api_key
             };
 
-        var pwdGrantCB = function (err, accessToken, refreshToken, results) {
-          if (err){
-            return next(err);
-          }
+        var clientGrantCB = function (err, accessToken, refreshToken, results) {
+          if (err) return next(err);
 
-          var profilePath = oauthConfig.server + oauthConfig.profilePath;
-
+          // If the OAuth authentication and authorization was a success, we
+          // do a request for the user Profile to validate the api_key.
           restler
-            .get(profilePath, { query: { access_token: accessToken }})
-            .on('complete', function(data, response){
-              // TODO: compare api_key received from Oauth provider with param api key before creating
-              // the user, do not update the user if keys do not match and send back error.
-              User
-                .create({
-                  username: data.username,
-                  apiKey: data.apiKey,
-                  accessToken: accessToken,
-                  refreshToken: refreshToken
-                })
-                .success(function(user){
-                  // TODO: Continue request flow if user was created successfully
-                  next();
-                })
-                .error(function(err){
-                  return next(err);
-                });
-              next();
+            .get(profilePath, { query: { access_token: accessToken } })
+            .on('complete', function(data, response) {
+              if (data.apiKey == paramApiKey) {
+                // On complete we used the username retrieved from the
+                // profile in the OAuth server to look up the user in
+                // the tessel-cloud DB.
+                User
+                  .find({ where: { username: data.username } })
+                  .success(function(userB) {
+                    // If the user record is found we update its values
+                    // with the ones we got back from the OAuth server.
+                    if (userB) {
+                      userB.accessToken = accessToken;
+                      userB.refreshToken = refreshToken;
+                      userB.apiKey = data.apiKey;
+
+                      userB
+                        .save()
+                        .success(function() {
+                          // if success we continue with the request flow
+                          next();
+                        })
+                        .error(function(err) {
+                          next(err);
+                        });
+                    }else{
+                      // If the user is not found it means this is a new user,
+                      // so we create a new record based on the profile info
+                      // we got back.
+                      User
+                        .create({
+                          username: data.username,
+                          apiKey: data.apiKey,
+                          accessToken: accessToken,
+                          refreshToken: refreshToken
+                        })
+                        .success(function(userC) {
+                          // if success we continue with the request flow
+                          next();
+                        })
+                        .error(function(err) {
+                          next(err);
+                        });
+                    }
+                  })
+                  .error(function(err) {
+                    next(err);
+                  });
+              }else{
+                return res.json(400, errors.incorrectApiKey);
+              }
             });
         };
 
-        oauth2.getOAuthAccessToken(code, oauthOptions, pwdGrantCB);
+        oauth2.getOAuthAccessToken(null, oauthOptions, clientGrantCB);
       }
     })
-    .error(function(err){
+    .error(function(err) {
       next(error);
     });
 }
