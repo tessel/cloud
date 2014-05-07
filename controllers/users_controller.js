@@ -45,14 +45,6 @@ var errors = {
     error: 'invalid_request',
     error_description: 'Request missing necessary data to create/update user.'
   },
-
-  missingCreds: {
-    code: 400,
-    error: 'invalid_request',
-    error_description: 'Request missing necessary data to create/update user.' +
-    'If first time using tessel-cloud, make sure to include username and password ' +
-    'you used to create your tessel accound.'
-  }
 };
 
 UsersController.prototype.create = function(req, res) {
