@@ -7,7 +7,7 @@ var Index = require('./controllers/index_controller'),
     v1    = require('./controllers/v1_controller');
 
 // Index routes
-router.get('/', Index.index);
+router.all('/', Index.oauthAuthentication, Index.index);
 
 // Index routes
 router.post('/users', Users.create);
