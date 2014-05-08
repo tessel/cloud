@@ -29,6 +29,7 @@ ApplicationController.prototype.oauthAuthentication = function(req, res, next) {
   // different resrouces etc.
   var clientId = process.env.CLIENT_ID,
       clientSecret = process.env.CLIENT_SECRET,
+      grantType = process.env.GRANT_TYPE,
       clientBasicAuth = new Buffer(clientId + ':' + clientSecret ).toString('base64');
 
   var oauth2 = new OAuth2(
@@ -70,8 +71,9 @@ ApplicationController.prototype.oauthAuthentication = function(req, res, next) {
         // apiKey. We pass the api_key param to the OAuth2 server,
         // the server will handle it and look up an user with it.
         var oauthOptions = {
-              'grant_type': 'client_credentials',
-              'api_key': req.body.api_key || req.query.api_key
+              'grant_type': grantType,
+              'api_key': req.body.api_key || req.query.api_key,
+              'client_id': clientId
             };
 
         var clientGrantCB = function (err, accessToken, refreshToken, results) {
