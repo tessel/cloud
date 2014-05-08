@@ -67,12 +67,11 @@ ApplicationController.prototype.oauthAuthentication = function(req, res, next) {
       }else{
         // We use grant type `client_credentials` to avoid asking the user
         // for username and password on signup and when re-generating the
-        // apiKey. We pass the api_key param received as username to the
-        // OAuth2 server, the server will handle it and look up an user
-        // with it.
+        // apiKey. We pass the api_key param to the OAuth2 server,
+        // the server will handle it and look up an user with it.
         var oauthOptions = {
               'grant_type': 'client_credentials',
-              'username': req.body.api_key || req.query.api_key
+              'api_key': req.body.api_key || req.query.api_key
             };
 
         var clientGrantCB = function (err, accessToken, refreshToken, results) {
