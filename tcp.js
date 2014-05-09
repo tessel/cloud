@@ -5,34 +5,42 @@ var net = require('net');
 module.exports = {
   server: null,
 
+  connections: {},
+
   start: function() {
     this.server = net.createServer(this.onConnection);
     return this;
   },
 
   onConnection: function(conn) {
-    console.log('server connected');
+    console.log('client connected');
 
-    conn.on('end', function() {
-      console.log('server disconnected');
-    });
+    var deviceId;
 
     conn.on('data', function(data) {
-      console.log(data.toString());
+      var str = data.toString();
+
+      if (/^id: (.*)$/.test(str)) {
+        deviceId = str.match(/^id: (.*)$/)[1];
+        module.exports.connections[deviceId] = conn;
+      }
+
+      console.log('received: ' + str);
     });
 
-    setInterval(function() {
-      conn.write('heartbeat\n')
-    }, 2000);
+    conn.on('end', function() {
+      delete module.exports.connections[deviceId];
+      console.log('client ' + deviceId +' disconnected');
+    });
   },
 
-  listen: function(port) {
-    if (port == null) {
-      port = process.env.TCP_PORT;
-    }
+  send: function(conn, data) {
+    var connection = this.connections[conn];
+    if (!connection) { return false; }
+    connection.write(data);
+  },
 
-    this.server.listen(port, function() {
-      console.log("TCP server bound to port " + port);
-    });
+  connected: function(id) {
+    return !!this.connections[id];
   }
 };
