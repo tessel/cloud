@@ -15,7 +15,7 @@ router.put('/users/:id', Users.update);
 router.delete('/users/:id', Users.delete);
 
 // API /v1 routes
-router.get('/v1/*', v1.auth)
+router.all('/v1/*', v1.auth)
 router.get('/v1/tessels', v1.list)
 router.get('/v1/tessels/:device_id', v1.details)
 router.put('/v1/tessels/:device_id', v1.push)
