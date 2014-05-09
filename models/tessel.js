@@ -3,7 +3,7 @@
 module.exports = function Tessel(sequelize, DataTypes) {
   var Tessel = sequelize.define('Tessel', {
     id: { type: DataTypes.INTEGER, autoIncrement: true, unique: true, primaryKey: true },
-    device_id: { type: DataTypes.INTEGER, unique: true, allowNull: false },
+    device_id: { type: DataTypes.STRING, unique: true, allowNull: false },
     lastPush: DataTypes.DATE,
     lastPushChecksum: DataTypes.STRING
   }, {

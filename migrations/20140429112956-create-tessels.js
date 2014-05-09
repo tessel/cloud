@@ -9,7 +9,7 @@ module.exports = {
       },
 
       device_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         unique: true,
         allowNull: false
       },
