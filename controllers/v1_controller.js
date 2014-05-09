@@ -12,6 +12,8 @@ var formidable = require('formidable');
 
 var V1Controller = function V1Controller () {}
 
+var tcp = require('../tcp');
+
 util.inherits(V1Controller, ApplicationController);
 
 // extracts an API key (if present) from a request
@@ -114,6 +116,8 @@ V1Controller.prototype.push = function(req, res) {
       return user.apiKey === req.api_key;
     });
 
+    console.log(tessel.users[0].apiKey, req.api_key)
+
     if (users.length === 0) {
       res.status = 403;
       return res.json({
@@ -130,25 +134,31 @@ V1Controller.prototype.push = function(req, res) {
       for (file in files) break;
       file = files[file];
 
-      // TODO - actually push to tessel
+      if (tcp.connected(tessel.device_id)) {
+        tcp.send(tessel.device_id, fs.readFileSync(file.path));
 
-      var hash = crypto.createHash('md5'),
-          stream = fs.createReadStream(file.path);
+        var hash = crypto.createHash('md5'),
+            stream = fs.createReadStream(file.path);
 
-      stream.on('data', function (data) {
-        hash.update(data, 'utf8');
-      });
+        stream.on('data', function (data) {
+          hash.update(data, 'utf8');
+        });
 
-      stream.on('end', function () {
-        tessel.lastPush = new Date();
-        tessel.lastPushChecksum = hash.digest('hex');
+        stream.on('end', function () {
+          tessel.lastPush = new Date();
+          tessel.lastPushChecksum = hash.digest('hex');
 
-        tessel.save();
+          tessel.save();
 
+          res.json({
+            message: "Your code is uploading to your Tessel now."
+          })
+        });
+      } else {
         res.json({
-          message: "Your code is uploading to your Tessel now."
-        })
-      });
+          message: "Your tessel is not reachable at this time."
+        });
+      }
     });
   });
 };
