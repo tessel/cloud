@@ -1,13 +1,7 @@
-var util = require('util');
-
-var ApplicationController = require('./application_controller');
-
 var db = require('../models'),
     User = db.User;
 
-var UsersController = function UsersController () {};
-
-util.inherits(UsersController, ApplicationController);
+var UsersController = module.exports = {};
 
 var errors = {
   userDoesNotExist: {
@@ -47,7 +41,7 @@ var errors = {
   },
 };
 
-UsersController.prototype.create = function(req, res) {
+UsersController.create = function(req, res) {
   var data = req.body;
 
 
@@ -87,7 +81,7 @@ UsersController.prototype.create = function(req, res) {
     });
 };
 
-UsersController.prototype.update = function(req, res) {
+UsersController.update = function(req, res) {
   var data = req.body,
       id = req.params.id;
 
@@ -127,7 +121,7 @@ UsersController.prototype.update = function(req, res) {
     });
 };
 
-UsersController.prototype.delete = function(req, res) {
+UsersController.delete = function(req, res) {
   var id = req.params.id;
 
   User
@@ -160,5 +154,3 @@ UsersController.prototype.delete = function(req, res) {
         })
     });
 };
-
-module.exports = new UsersController();

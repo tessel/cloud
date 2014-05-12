@@ -2,12 +2,13 @@
 
 var router = require('express').Router();
 
-var Index = require('./controllers/index_controller'),
+var App   = require('./controllers/application_controller'),
+    Index = require('./controllers/index_controller'),
     Users = require('./controllers/users_controller'),
     v1    = require('./controllers/v1_controller');
 
 // Index routes
-router.all('/', Index.oauthAuthentication, Index.index);
+router.all('/', App.oauthAuthentication, Index.index);
 
 // Index routes
 router.post('/users', Users.create);
