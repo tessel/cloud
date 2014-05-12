@@ -1,13 +1,7 @@
-var util = require('util');
+var IndexController = {};
 
-var ApplicationController = require('./application_controller');
-
-var IndexController = function IndexController () {};
-
-util.inherits(IndexController, ApplicationController);
-
-IndexController.prototype.index = function(req, res) {
+IndexController.index = function(req, res) {
   res.json({ greeting: "Hello from Express" });
 };
 
-module.exports = new IndexController();
+module.exports = IndexController;

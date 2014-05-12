@@ -1,8 +1,5 @@
 var fs = require('fs'),
-    crypto = require('crypto'),
-    util = require('util');
-
-var ApplicationController = require('./application_controller');
+    crypto = require('crypto');
 
 var db = require("../models"),
     User = db.User
@@ -10,11 +7,9 @@ var db = require("../models"),
 
 var formidable = require('formidable');
 
-var V1Controller = function V1Controller () {}
+var V1Controller = {}
 
 var tcp = require('../tcp');
-
-util.inherits(V1Controller, ApplicationController);
 
 // extracts an API key (if present) from a request
 var getAPIKey = function(req) {
@@ -43,7 +38,7 @@ var getAPIKey = function(req) {
 };
 
 // intercept and return error for all requests that don't contain an API key
-V1Controller.prototype.auth = function(req, res, next) {
+V1Controller.auth = function(req, res, next) {
   var json = {
     code: 400,
     error: "invalid_request",
@@ -62,7 +57,7 @@ V1Controller.prototype.auth = function(req, res, next) {
 };
 
 // Lists all tessels belonging to the currently authenticated user
-V1Controller.prototype.list = function(req, res) {
+V1Controller.list = function(req, res) {
   User
     .find({ where: { apiKey: req.api_key }, include: [ Tessel ] })
     .success(function(user) {
@@ -81,7 +76,7 @@ V1Controller.prototype.list = function(req, res) {
 };
 
 // Returns data on a specific tessel, if the user has access
-V1Controller.prototype.details = function(req, res) {
+V1Controller.details = function(req, res) {
   Tessel.find({
     include: [ User ],
     where: { device_id: req.params.device_id, }
@@ -107,7 +102,7 @@ V1Controller.prototype.details = function(req, res) {
 };
 
 // Pushes source to the Tessel
-V1Controller.prototype.push = function(req, res) {
+V1Controller.push = function(req, res) {
   Tessel.find({
     include: [ User ],
     where: { device_id: req.params.device_id, }
@@ -163,4 +158,4 @@ V1Controller.prototype.push = function(req, res) {
   });
 };
 
-module.exports = new V1Controller();
+module.exports = V1Controller;

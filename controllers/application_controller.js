@@ -16,9 +16,9 @@ var errors = {
   }
 };
 
-var ApplicationController = function ApplicationController() {};
+var ApplicationController = {};
 
-ApplicationController.prototype.oauthAuthentication = function(req, res, next) {
+ApplicationController.oauthAuthentication = function(req, res, next) {
 
   // OAuth2 authentication process
   // First we setup the OAuth2 client.
@@ -142,6 +142,6 @@ ApplicationController.prototype.oauthAuthentication = function(req, res, next) {
     .error(function(err) {
       next(error);
     });
-}
+};
 
 module.exports = ApplicationController;
