@@ -7,7 +7,7 @@ var db = require("../models"),
 
 var formidable = require('formidable');
 
-var V1Controller = module.exports = {}
+var V1Controller = {}
 
 var tcp = require('../tcp');
 
@@ -157,3 +157,5 @@ V1Controller.push = function(req, res) {
     });
   });
 };
+
+module.exports = V1Controller;

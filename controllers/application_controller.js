@@ -16,7 +16,7 @@ var errors = {
   }
 };
 
-var ApplicationController = module.exports = {};
+var ApplicationController = {};
 
 ApplicationController.oauthAuthentication = function(req, res, next) {
 
@@ -142,4 +142,6 @@ ApplicationController.oauthAuthentication = function(req, res, next) {
     .error(function(err) {
       next(error);
     });
-}
+};
+
+module.exports = ApplicationController;

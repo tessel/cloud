@@ -1,7 +1,7 @@
 var db = require('../models'),
     User = db.User;
 
-var UsersController = module.exports = {};
+var UsersController = {};
 
 var errors = {
   userDoesNotExist: {
@@ -154,3 +154,5 @@ UsersController.delete = function(req, res) {
         })
     });
 };
+
+module.exports = UsersController;
