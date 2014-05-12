@@ -135,7 +135,7 @@ V1Controller.prototype.push = function(req, res) {
       file = files[file];
 
       if (tcp.connected(tessel.device_id)) {
-        tcp.send(tessel.device_id, fs.readFileSync(file.path));
+        tcp.sendFile(tessel.device_id, file.path);
 
         var hash = crypto.createHash('md5'),
             stream = fs.createReadStream(file.path);

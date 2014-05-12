@@ -1,6 +1,7 @@
 require('dotenv').load();
 
-var net = require('net');
+var net = require('net'),
+    fs = require('fs');
 
 module.exports = {
   server: null,
@@ -38,6 +39,15 @@ module.exports = {
     var connection = this.connections[conn];
     if (!connection) { return false; }
     connection.write(data);
+  },
+
+  sendFile: function(conn, filename) {
+    var connection = this.connections[conn];
+    if (!connection) { return false; }
+
+    console.log(filename);
+    var stream = fs.createReadStream(filename);
+    stream.pipe(connection);
   },
 
   connected: function(id) {
