@@ -3,6 +3,8 @@ require('dotenv').load();
 var net = require('net'),
     fs = require('fs');
 
+var through = require('through');
+
 module.exports = {
   server: null,
 
@@ -45,9 +47,13 @@ module.exports = {
     var connection = this.connections[conn];
     if (!connection) { return false; }
 
-    console.log(filename);
-    var stream = fs.createReadStream(filename);
-    stream.pipe(connection);
+    connection.write('file-start');
+
+    var stream = fs.createReadStream(filename),
+        write = function(chunk) { connection.write(chunk); },
+        end = function() { connection.write('file-end'); };
+
+    stream.pipe(through(write, end, { autoDestroy: false }));
   },
 
   connected: function(id) {

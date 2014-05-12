@@ -27,6 +27,8 @@
     "pg":             "3.0.3",
     "sequelize":      "2.0.0-dev11",
     "oauth":          "0.9.11",
-    "restler":        "3.2.2"
+    "restler":        "3.2.2",
+
+    "through":        "2.3.4"
   }
 }
