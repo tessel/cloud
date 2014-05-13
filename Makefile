@@ -19,4 +19,4 @@ migration:
 	@$(BIN)/sequelize --config ./config/db.js -c $(NAME)
 
 serve:
-	@./bin/www
+	@./bin/serve

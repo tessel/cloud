@@ -1,62 +1,61 @@
 require('dotenv').load();
 
-var net = require('net'),
-    fs = require('fs');
+var debug = require('debug')('tcp');
 
-var through = require('through');
+var cluster = require('cluster'),
+    net     = require('net'),
+    fs      = require('fs');
 
-module.exports = {
-  server: null,
+var connections = {};
 
-  connections: {},
+var onConnection = function onConnection(socket) {
+  debug('client connected');
 
-  start: function() {
-    this.server = net.createServer(this.onConnection);
-    return this;
-  },
+  var deviceId;
 
-  onConnection: function(conn) {
-    console.log('client connected');
+  socket.on('data', function(chunk) {
+    var data = chunk.toString();
 
-    var deviceId;
+    if (/^id: (.*)$/.test(data)) {
+      deviceId = data.match(/^id: (.*)$/)[1];
+      connections[deviceId] = conn;
+    }
 
-    conn.on('data', function(data) {
-      var str = data.toString();
+    debug('received: %s', data);
+  });
 
-      if (/^id: (.*)$/.test(str)) {
-        deviceId = str.match(/^id: (.*)$/)[1];
-        module.exports.connections[deviceId] = conn;
-      }
+  socket.on('end', function() {
+    if (deviceId) {
+      delete connections[deviceId];
+      debug('client %s disconnected', deviceId);
+    } else {
+      debug('client disconnected')
+    }
+  });
+};
 
-      console.log('received: ' + str);
-    });
+module.exports.connections = connections;
 
-    conn.on('end', function() {
-      delete module.exports.connections[deviceId];
-      console.log('client ' + deviceId +' disconnected');
-    });
-  },
+module.exports.send = function send(device, data) {
+  var connection = this.connections[device];
 
-  send: function(conn, data) {
-    var connection = this.connections[conn];
-    if (!connection) { return false; }
-    connection.write(data);
-  },
-
-  sendFile: function(conn, filename) {
-    var connection = this.connections[conn];
-    if (!connection) { return false; }
-
-    connection.write('file-start');
-
-    var stream = fs.createReadStream(filename),
-        write = function(chunk) { connection.write(chunk); },
-        end = function() { connection.write('file-end'); };
-
-    stream.pipe(through(write, end, { autoDestroy: false }));
-  },
-
-  connected: function(id) {
-    return !!this.connections[id];
+  if (!connection) {
+    return false;
   }
+
+  connection.write(data);
+};
+
+module.exports.sendFile = function sendFile(device, filename) {
+  var connection = this.connections[device];
+
+  if (!connection) {
+    return false;
+  }
+
+  var stream = fs.createReadStream(filename),
+      write = function(chunk) { connection.write(chunk); },
+      end = function() { connection.write('file-end'); };
+
+  stream.pipe(through(write, end, { autoDestroy: false }));
 };

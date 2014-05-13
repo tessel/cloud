@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+require('dotenv').load();
+
+var debug = require('debug')('api'),
+    app   = require('../app'),
+    port  = process.env.PORT || 3000;
+
+debug('starting');
+
+app.set('port', port);
+
+var server = app.listen(app.get('port'), function() {
+  debug("listening on port %s", server.address().port);
+});
+
+require('../cluster');
