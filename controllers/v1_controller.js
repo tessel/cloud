@@ -9,7 +9,7 @@ var formidable = require('formidable');
 
 var V1Controller = {}
 
-var tcp = require('../tcp');
+var cluster = require('../cluster');
 
 // extracts an API key (if present) from a request
 var getAPIKey = function(req) {
@@ -129,8 +129,8 @@ V1Controller.push = function(req, res) {
       for (file in files) break;
       file = files[file];
 
-      if (tcp.connected(tessel.device_id)) {
-        tcp.sendFile(tessel.device_id, file.path);
+      if (cluster.isConnected(tessel.device_id)) {
+        cluster.sendFile(tessel.device_id, file.path);
 
         var hash = crypto.createHash('md5'),
             stream = fs.createReadStream(file.path);

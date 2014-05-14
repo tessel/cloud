@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+require('dotenv').load();
+
+var cluster = require('cluster'),
+    cpus = require('os').cpus();
+
+var debug = require('debug')('master');
+
+var handleWorkerMessage = function (worker) {
+  return function handleWorkerMessage(data) {
+    if (!data.command) {
+      return;
+    }
+
+    switch (data.command) {
+      case 'add':
+        cluster.connections[data.data] = worker;
+        break;
+
+      case 'delete':
+        delete cluster.connections[data.data];
+        break;
+
+      default:
+        return;
+    }
+  }
+}
+
+if (cluster.isMaster) {
+  var app = require('../app'),
+      port = process.env.PORT || 3000;
+
+  debug('api starting');
+
+  app.set('port', port);
+
+  cluster.connections = {};
+
+  var server = app.listen(app.get('port'), function() {
+    debug('api listening on port %s', server.address().port)
+  });
+
+  cpus.forEach(function() {
+    var worker = cluster.fork();
+
+    worker.on('message', handleWorkerMessage(worker));
+  });
+
+  cluster.on('exit', function(worker, code, signal) {
+    debug('tcp worker %s died', worker.process.pid);
+  });
+} else {
+  var tcp = require('../tcp'),
+      port = process.env.TCP_PORT || 3001;
+
+  debug('tcp server %s starting', process.pid);
+
+  tcp.server.listen(port, function() {
+    debug('tcp server %s listening on port %s', process.pid, port);
+  });
+}

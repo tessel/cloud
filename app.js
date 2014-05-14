@@ -9,6 +9,7 @@ var path = require('path');
 
 var express = require('express'),
     logger = require('morgan'),
+    debug = require('debug')('api'),
     bodyParser = require('body-parser');
 
 var routes = require('./routes');
@@ -24,7 +25,7 @@ db.sequelize
       process.exit();
     }
 
-    console.log('DB Synced Successfully')
+    debug('db synced successfully')
   });
 
 var app = express();
