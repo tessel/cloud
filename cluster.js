@@ -10,5 +10,5 @@ if (cluster.isMaster) {
     debug('worker %s died', worker.process.pid);
   });
 } else {
-  require('./tcp');
+  // require('./tcp');
 }

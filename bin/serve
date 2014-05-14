@@ -1,16 +1,37 @@
 #!/usr/bin/env node
 require('dotenv').load();
 
-var debug = require('debug')('api'),
-    app   = require('../app'),
-    port  = process.env.PORT || 3000;
+var cluster = require('cluster'),
+    cpus = require('os').cpus().length;
 
-debug('starting');
+var debug = require('debug')('master');
 
-app.set('port', port);
+if (cluster.isMaster) {
+  var app = require('../app'),
+      port = process.env.PORT || 3000;
 
-var server = app.listen(app.get('port'), function() {
-  debug("listening on port %s", server.address().port);
-});
+  debug('api starting');
 
-require('../cluster');
+  app.set('port', port);
+
+  var server = app.listen(app.get('port'), function() {
+    debug('api listening on port %s', server.address().port)
+  });
+
+  for (var i = 0; i < cpus; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', function(worker, code, signal) {
+    debug('tcp worker %s died', worker.process.pid);
+  });
+} else {
+  var tcp = require('../tcp'),
+      port = process.env.TCP_PORT || 3001;
+
+  debug('tcp server %s starting', process.pid);
+
+  tcp.server.listen(port, function() {
+    debug('tcp server %s listening on port %s', process.pid, port);
+  });
+}

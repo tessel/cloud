@@ -1,6 +1,6 @@
 require('dotenv').load();
 
-var debug = require('debug')('tcp');
+var debug = require('debug')('tcp:' + process.pid);
 
 var cluster = require('cluster'),
     net     = require('net'),
@@ -18,7 +18,7 @@ var onConnection = function onConnection(socket) {
 
     if (/^id: (.*)$/.test(data)) {
       deviceId = data.match(/^id: (.*)$/)[1];
-      connections[deviceId] = conn;
+      connections[deviceId] = socket;
     }
 
     debug('received: %s', data);
@@ -33,6 +33,8 @@ var onConnection = function onConnection(socket) {
     }
   });
 };
+
+module.exports.server = net.createServer(onConnection);
 
 module.exports.connections = connections;
 
