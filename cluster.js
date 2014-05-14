@@ -1,14 +1,27 @@
-var debug = require('debug')('tcp');
-
+// This Cluster file provides a mechanism for the API to talk to the TCP servers
+// spun up in seperate processes.
 var cluster = require('cluster');
-var cpus = require('os').cpus().length;
 
-if (cluster.isMaster) {
-  for (var i = 0; i < cpus; i++) { cluster.fork(); }
+module.exports.isConnected = function isConnected(tesselId) {
+  return !!cluster.connections[tesselId];
+};
 
-  cluster.on('exit', function(worker, code, signal) {
-    debug('worker %s died', worker.process.pid);
-  });
-} else {
-  // require('./tcp');
-}
+module.exports.send = function send(tesselId, data) {
+  if (!this.isConnected(tesselId)) {
+    return false;
+  }
+
+  var worker = cluster.connections[tesselId];
+
+  worker.send({ command: 'send', device: tesselId, data: filename });
+};
+
+module.exports.sendFile = function sendFile(tesselId, filename) {
+  if (!this.isConnected(tesselId)) {
+    return false;
+  }
+
+  var worker = cluster.connections[tesselId];
+
+  worker.send({ command: 'sendFile', device: tesselId, data: filename });
+};

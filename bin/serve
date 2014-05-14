@@ -2,9 +2,30 @@
 require('dotenv').load();
 
 var cluster = require('cluster'),
-    cpus = require('os').cpus().length;
+    cpus = require('os').cpus();
 
 var debug = require('debug')('master');
+
+var handleWorkerMessage = function (worker) {
+  return function handleWorkerMessage(data) {
+    if (!data.command) {
+      return;
+    }
+
+    switch (data.command) {
+      case 'add':
+        cluster.connections[data.data] = worker;
+        break;
+
+      case 'delete':
+        delete cluster.connections[data.data];
+        break;
+
+      default:
+        return;
+    }
+  }
+}
 
 if (cluster.isMaster) {
   var app = require('../app'),
@@ -14,13 +35,17 @@ if (cluster.isMaster) {
 
   app.set('port', port);
 
+  cluster.connections = {};
+
   var server = app.listen(app.get('port'), function() {
     debug('api listening on port %s', server.address().port)
   });
 
-  for (var i = 0; i < cpus; i++) {
-    cluster.fork();
-  }
+  cpus.forEach(function() {
+    var worker = cluster.fork();
+
+    worker.on('message', handleWorkerMessage(worker));
+  });
 
   cluster.on('exit', function(worker, code, signal) {
     debug('tcp worker %s died', worker.process.pid);
