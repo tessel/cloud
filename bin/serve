@@ -14,11 +14,15 @@ var handleWorkerMessage = function (worker) {
 
     switch (data.command) {
       case 'add':
-        cluster.connections[data.data] = worker;
+        cluster.connections[worker.id].push(data.data);
         break;
 
       case 'delete':
-        delete cluster.connections[data.data];
+        var connections = cluster.connections[worker.id];
+        for (var i = 0; i < connections.length; i++) {
+          if (connections[i] === data.data) { connections.splice(i, 1); }
+        }
+
         break;
 
       default:
@@ -43,12 +47,13 @@ if (cluster.isMaster) {
 
   cpus.forEach(function() {
     var worker = cluster.fork();
-
+    cluster.connections[worker.id] = [];
     worker.on('message', handleWorkerMessage(worker));
   });
 
   cluster.on('exit', function(worker, code, signal) {
     debug('tcp worker %s died', worker.process.pid);
+    delete cluster.connections[worker.id]
   });
 } else {
   var tcp = require('../tcp'),
