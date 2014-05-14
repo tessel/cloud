@@ -14,7 +14,7 @@ var cluster = require('../cluster');
 // Lists all tessels belonging to the currently authenticated user
 V1Controller.list = function(req, res) {
   User
-    .find({ where: { apiKey: req.params.api_key }, include: [ Tessel ] })
+    .find({ where: { apiKey: req.apiKey }, include: [ Tessel ] })
     .success(function(user) {
       var json = [];
 
@@ -37,7 +37,7 @@ V1Controller.details = function(req, res) {
     where: { device_id: req.params.device_id, }
   }).success(function(tessel) {
     var users = tessel.users.filter(function(user) {
-      return user.apiKey === req.params.api_key;
+      return user.apiKey === req.apiKey;
     });
 
     if (users.length === 0) {
@@ -63,10 +63,10 @@ V1Controller.push = function(req, res) {
     where: { device_id: req.params.device_id, }
   }).success(function(tessel) {
     var users = tessel.users.filter(function(user) {
-      return user.apiKey === req.params.api_key;
+      return user.apiKey === req.apiKey;
     });
 
-    console.log(tessel.users[0].apiKey, req.params.api_key)
+    console.log(tessel.users[0].apiKey, req.apiKey);
 
     if (users.length === 0) {
       res.status = 403;

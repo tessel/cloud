@@ -70,7 +70,7 @@ ApplicationController.authenticate = function(req, res, next) {
       profilePath = oauthConfig.server + oauthConfig.profilePath;
 
   if (paramApiKey) {
-    req.params.apiKey = paramApiKey;
+    req.apiKey = paramApiKey;
   } else {
     return res.json(400, errors.incorrectApiKey);
   }
