@@ -17,8 +17,8 @@ router.delete('/users/:id', Users.delete);
 
 // API /v1 routes
 router.all('/v1/*', App.authenticate)
-router.get('/v1/tessels', App.authenticate, v1.list)
-router.get('/v1/tessels/:device_id', App.authenticate, v1.details)
-router.put('/v1/tessels/:device_id', App.authenticate, v1.push)
+router.get('/v1/tessels', v1.list)
+router.get('/v1/tessels/:device_id', v1.details)
+router.put('/v1/tessels/:device_id', v1.push)
 
 module.exports = router;
