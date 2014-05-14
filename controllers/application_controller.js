@@ -10,15 +10,40 @@ var db = require('../models'),
 var errors = {
   incorrectApiKey: {
     code: 400,
-    error: 'invalid_request',
-    error_description: 'The provided api_key param is invalid.' +
-    'Please verify the api_key provided is the correct one.'
+    error: "invalid_request",
+    error_description: "The API key was not found"
   }
+};
+
+// extracts an API key (if present) from a request
+var getApiKey = function(req) {
+  var headerRegex = /^Bearer (\w+)/;
+
+  // check in Authorization header
+  if (headerRegex.test(req.headers.authorization)) {
+    return req.headers.authorization.match(headerRegex)[1];
+  }
+
+  // check URL query string (only with GET requests)
+  if (req.method === "GET") {
+    if (req.query.api_key !== undefined && /\w+/.test(req.query.api_key)) {
+      return req.query.api_key;
+    }
+  }
+
+  // check POST body
+  if (req.method === "POST") {
+    if (req.body.api_key !== undefined && /\w+/.test(req.body.api_key)) {
+      return req.body.api_key;
+    }
+  }
+
+  return false;
 };
 
 var ApplicationController = {};
 
-ApplicationController.oauthAuthentication = function(req, res, next) {
+ApplicationController.authenticate = function(req, res, next) {
 
   // OAuth2 authentication process
   // First we setup the OAuth2 client.
@@ -41,8 +66,14 @@ ApplicationController.oauthAuthentication = function(req, res, next) {
     { 'Authorization': 'Basic ' + clientBasicAuth }
   );
 
-  var paramApiKey = req.body.api_key || req.query.api_key,
+  var paramApiKey = getApiKey(req),
       profilePath = oauthConfig.server + oauthConfig.profilePath;
+
+  if (paramApiKey) {
+    req.params.apiKey = paramApiKey;
+  } else {
+    return res.json(400, errors.incorrectApiKey);
+  }
 
   // Lookup user by api_key provided
   User
