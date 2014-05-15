@@ -53,7 +53,8 @@ if (cluster.isMaster) {
 
   cluster.on('exit', function(worker, code, signal) {
     debug('tcp worker %s died', worker.process.pid);
-    delete cluster.connections[worker.id]
+    delete cluster.connections[worker.id];
+    cluster.fork();
   });
 } else {
   var tcp = require('../tcp'),
