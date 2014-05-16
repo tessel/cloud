@@ -164,8 +164,8 @@ ApplicationController.authenticate = function(req, res, next) {
                     next(err);
                   });
               }else{
-              }
                 return res.json(400, errors.incorrectApiKey);
+              }
             });
         };
 

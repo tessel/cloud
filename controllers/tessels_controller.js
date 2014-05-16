@@ -101,7 +101,6 @@ TesselsController.create = function(req, res) {
               });
           }else{
             // User not found send back an error.
-            console.log(err);
             return res.json(500, errors.create);
           }
         })
