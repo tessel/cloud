@@ -34,7 +34,7 @@ var getApiKey = function(req) {
   }
 
   // check POST body
-  if (req.method === "POST") {
+  if (['POST', 'DELETE', 'PUT'].indexOf(req.method) > -1) {
     if (req.body.api_key !== undefined && /\w+/.test(req.body.api_key)) {
       return req.body.api_key;
     }
@@ -164,8 +164,8 @@ ApplicationController.authenticate = function(req, res, next) {
                     next(err);
                   });
               }else{
-                return res.json(400, errors.incorrectApiKey);
               }
+                return res.json(400, errors.incorrectApiKey);
             });
         };
 

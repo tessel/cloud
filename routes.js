@@ -5,15 +5,23 @@ var router = require('express').Router();
 var App   = require('./controllers/application_controller'),
     Index = require('./controllers/index_controller'),
     Users = require('./controllers/users_controller'),
+    Tessels = require('./controllers/tessels_controller'),
     v1    = require('./controllers/v1_controller');
 
 // Index routes
 router.all('/', Index.index);
 
-// Index routes
-router.post('/users', Users.create);
-router.put('/users/:id', Users.update);
-router.delete('/users/:id', Users.delete);
+// User routes
+//router.post('/users', Users.create);
+//router.put('/users/:id', Users.update);
+//router.delete('/users/:id', Users.delete);
+
+// Tessel routes
+//
+router.all('/tessels*', App.authenticate)
+router.post('/tessels', Tessels.create);
+router.put('/tessels/:id', Tessels.update);
+router.delete('/tessels/:id', Tessels.delete);
 
 // API /v1 routes
 router.all('/v1/*', App.authenticate)
