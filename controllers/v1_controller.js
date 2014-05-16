@@ -16,10 +16,13 @@ V1Controller.list = function(req, res) {
   User
     .find({ where: { apiKey: req.apiKey }, include: [ Tessel ] })
     .success(function(user) {
-      var json = [];
+      var json = {
+        ok: true,
+        data: []
+      };
 
       user.tessels.forEach(function(tessel) {
-        json.push({
+        json.data.push({
           id: tessel.device_id,
           lastPush: tessel.lastPush,
           lastPushChecksum: tessel.lastPushChecksum
@@ -41,17 +44,22 @@ V1Controller.details = function(req, res) {
     });
 
     if (users.length === 0) {
-      res.status = 403;
-      return res.json({
-        error: "Permission Denied",
-        info: "I didn't recognize that core name or ID"
+      return res.json(403, {
+        ok: false,
+        error: {
+          type: "Permission Denied",
+          message: "I didn't recognize that core name or ID"
+        }
       });
     }
 
     res.json({
-      id: tessel.device_id,
-      lastPush: tessel.lastPush,
-      lastPushChecksum: tessel.lastPushChecksum
+      ok: true,
+      data: {
+        id: tessel.device_id,
+        lastPush: tessel.lastPush,
+        lastPushChecksum: tessel.lastPushChecksum
+      }
     });
   });
 };
@@ -69,10 +77,12 @@ V1Controller.push = function(req, res) {
     console.log(tessel.users[0].apiKey, req.apiKey);
 
     if (users.length === 0) {
-      res.status = 403;
-      return res.json({
-        error: "Permission Denied",
-        info: "I didn't recognize that core name or ID"
+      return res.json(403, {
+        ok: false,
+        error:  {
+          type: "Permission Denied",
+          info: "I didn't recognize that core name or ID"
+        }
       });
     }
 
@@ -101,12 +111,17 @@ V1Controller.push = function(req, res) {
           tessel.save();
 
           res.json({
-            message: "Your code is uploading to your Tessel now."
+            ok: true,
+            data: "Your code is uploading to your Tessel now."
           })
         });
       } else {
-        res.json({
-          message: "Your tessel is not reachable at this time."
+        return res.json(404, {
+          ok: false,
+          error: {
+            type: "Not Found",
+            message: "Your Tessel is not reachable at this time."
+          }
         });
       }
     });

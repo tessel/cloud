@@ -9,9 +9,11 @@ var db = require('../models'),
 
 var errors = {
   incorrectApiKey: {
-    code: 400,
-    error: "invalid_request",
-    error_description: "The API key was not found"
+    ok: false,
+    error: {
+      type: "invalid_request",
+      message: "The API key was not found"
+    }
   }
 };
 
