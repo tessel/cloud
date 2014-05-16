@@ -57,7 +57,7 @@ var errors = {
 TesselsController.create = function(req, res) {
   var params = req.body;
 
-  if (!params.api_key || !params.device_id) {
+  if (!req.apiKey || !params.device_id) {
     return res.json(400, errors.missingParams);
   }
 
@@ -79,7 +79,7 @@ TesselsController.create = function(req, res) {
 
       // Look up the user to associate the api_key
       User
-        .find({ where: { apiKey: params.api_key } })
+        .find({ where: { apiKey: req.apiKey } })
 
         .success(function(user) {
           // If the user is found create a new tessel instance and save it
@@ -126,14 +126,14 @@ TesselsController.update = function(req, res) {
 
   params.id = req.params.id;
 
-  if (!params.api_key || !params.id) {
+  if (!req.apiKey || !params.id) {
     return res.json(400, errors.missingParams);
   }
 
   // lookup user, it will always exist because it just passed
   // authentication
   User
-    .find({ where: { apiKey: params.api_key }})
+    .find({ where: { apiKey: req.apiKey }})
 
     .error(function(err) {
       return res.json(500, errors.update);
@@ -177,14 +177,14 @@ TesselsController.delete = function(req, res) {
 
   params.id = req.params.id;
 
-  if (!params.api_key || !params.id) {
+  if (!req.apiKey || !params.id) {
     return res.json(400, errors.missingParams);
   }
 
   // lookup user, it will always exist because it just passed
   // authentication
   User
-    .find({ where: { apiKey: params.api_key }})
+    .find({ where: { apiKey: req.apiKey }})
 
     .error(function(err) {
       return res.json(500, errors.update);
