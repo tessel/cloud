@@ -105,9 +105,7 @@ TesselsController.create = function(req, res) {
                     });
                   })
               });
-
           } else {
-            console.log(err);
             return res.json(500, errors.create);
           }
         });

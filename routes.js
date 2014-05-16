@@ -7,7 +7,7 @@ var App   = require('./controllers/application_controller'),
     v1    = require('./controllers/v1_controller');
 
 // Tessel routes
-router.all('/tessels/*', App.authenticate)
+router.all('/tessels*', App.authenticate)
 router.post('/tessels', Tessels.create);
 router.put('/tessels/:id', Tessels.update);
 router.delete('/tessels/:id', Tessels.delete);

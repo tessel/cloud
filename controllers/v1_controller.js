@@ -11,6 +11,16 @@ var V1Controller = {}
 
 var cluster = require('../cluster');
 
+var errors = {
+  notFound: {
+    ok: false,
+    error: {
+      type: "Permission Denied",
+      message: "I didn't recognize that core name or ID"
+    }
+  }
+}
+
 // Lists all tessels belonging to the currently authenticated user
 V1Controller.list = function(req, res) {
   User
@@ -44,13 +54,7 @@ V1Controller.details = function(req, res) {
     });
 
     if (users.length === 0) {
-      return res.json(403, {
-        ok: false,
-        error: {
-          type: "Permission Denied",
-          message: "I didn't recognize that core name or ID"
-        }
-      });
+      return res.json(403, errors.notFound);
     }
 
     res.json({
@@ -70,6 +74,10 @@ V1Controller.push = function(req, res) {
     include: [ User ],
     where: { device_id: req.params.device_id, }
   }).success(function(tessel) {
+    if (!tessel) {
+      return res.json(403, errors.notFound);
+    }
+
     var users = tessel.users.filter(function(user) {
       return user.apiKey === req.apiKey;
     });
@@ -77,13 +85,7 @@ V1Controller.push = function(req, res) {
     console.log(tessel.users[0].apiKey, req.apiKey);
 
     if (users.length === 0) {
-      return res.json(403, {
-        ok: false,
-        error:  {
-          type: "Permission Denied",
-          info: "I didn't recognize that core name or ID"
-        }
-      });
+      return res.json(403, errors.notFound);
     }
 
     var form = new formidable.IncomingForm();
