@@ -74,7 +74,7 @@ V1Controller.push = function(req, res) {
     include: [ User ],
     where: { device_id: req.params.device_id, }
   }).success(function(tessel) {
-    if (!!tessel) {
+    if (!tessel) {
       return res.json(403, errors.notFound);
     }
 
