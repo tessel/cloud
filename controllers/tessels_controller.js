@@ -55,15 +55,15 @@ var errors = {
 };
 
 TesselsController.create = function(req, res) {
-  var params = req.body;
+  var deviceID = req.body.device_id;
 
-  if (!req.apiKey || !params.device_id) {
+  if (!req.apiKey || !deviceID) {
     return res.json(400, errors.missingParams);
   }
 
   // Check if the tessel already exists
   Tessel
-    .find({ where: { device_id: params.device_id } })
+    .find({ where: { device_id: deviceID } })
 
     .error(function(err) {
       console.log(err);
@@ -71,23 +71,24 @@ TesselsController.create = function(req, res) {
     })
 
     .success(function(tessel) {
-      // since we are not allowing multiple users per tessel at the momment,
-      // if it does exist respond with an error.
       if (!!tessel) {
         return res.json(400, errors.tesselExists);
       }
 
-      // Look up the user to associate the api_key
       User
         .find({ where: { apiKey: req.apiKey } })
 
-        .success(function(user) {
-          // If the user is found create a new tessel instance and save it
-          if (!!user) {
-            var tessel = Tessel.build({ device_id: params.device_id });
+        .error(function(err) {
+          console.log(err);
+          return res.json(500, errors.create);
+        })
 
-            tessel
-              .save()
+        .success(function(user) {
+          if (!!user) {
+            var tessel = Tessel
+
+            Tessel
+              .create({ device_id: deviceID })
 
               .error(function(err) {
                 console.log(err);
@@ -95,28 +96,20 @@ TesselsController.create = function(req, res) {
               })
 
               .success(function(tessel) {
-                // If the tessel is created successfully we associate it with
-                // the user doing the request
                 tessel
                   .addUser(user)
                   .success(function() {
-                    // Everything goo return success message
                     return res.json({
-                      ok: true
+                      ok: true,
                       data: "Tessel was created successfully"
                     });
                   })
               });
-          }else{
-            // User not found send back an error.
+
+          } else {
             console.log(err);
             return res.json(500, errors.create);
           }
-        })
-
-        .error(function(err) {
-          console.log(err);
-          return res.json(500, errors.create);
         });
     });
 };
@@ -124,14 +117,10 @@ TesselsController.create = function(req, res) {
 TesselsController.update = function(req, res) {
   var params = req.body;
 
-  params.id = req.params.id;
-
-  if (!req.apiKey || !params.id) {
+  if (!req.apiKey || !req.params.id) {
     return res.json(400, errors.missingParams);
   }
 
-  // lookup user, it will always exist because it just passed
-  // authentication
   User
     .find({ where: { apiKey: req.apiKey }})
 
@@ -140,20 +129,16 @@ TesselsController.update = function(req, res) {
     })
 
     .success(function(user) {
-      // Check if tessel exists using id
       Tessel
-        .find({ where: { id: params.id } })
+        .find({ where: { id: req.params.id } })
         .success(function(tessel) {
-          // if it does not exist respond with error
           if (!tessel) {
             return res.json(400, errors.tesselDoesNotExist);
           }
-          // if it does exist check if it is related to current user
+
           user
             .hasTessel(tessel)
             .success(function(result) {
-              // if it belongs to current user update the record
-              // and respond with success
               if (result) {
                 tessel
                   .update(params.tessel)
@@ -163,8 +148,7 @@ TesselsController.update = function(req, res) {
                       data: "Tessel was updated successfully"
                     });
                   });
-              }else{
-                // if it does not belong to this user respond with error
+              } else {
                 return res.json(400, errors.tesselDoesNotExist);
               }
             })
@@ -175,14 +159,10 @@ TesselsController.update = function(req, res) {
 TesselsController.delete = function(req, res) {
   var params = req.body;
 
-  params.id = req.params.id;
-
-  if (!req.apiKey || !params.id) {
+  if (!req.apiKey || !req.params.id) {
     return res.json(400, errors.missingParams);
   }
 
-  // lookup user, it will always exist because it just passed
-  // authentication
   User
     .find({ where: { apiKey: req.apiKey }})
 
@@ -191,20 +171,16 @@ TesselsController.delete = function(req, res) {
     })
 
     .success(function(user) {
-      // Check if tessel exists using id
       Tessel
-        .find({ where: { id: params.id } })
+        .find({ where: { id: req.params.id } })
         .success(function(tessel) {
-          // if it does not exist respond with error
           if (!tessel) {
             return res.json(400, errors.tesselDoesNotExist);
           }
-          // if it does exist check if it is related to current user
+
           user
             .hasTessel(tessel)
             .success(function(result) {
-              // if it belongs to current user delete both association
-              // and record, and respond with success
               if (result) {
                 user
                   .removeTessel(tessel)
@@ -218,8 +194,7 @@ TesselsController.delete = function(req, res) {
                         });
                       });
                   });
-              }else{
-                // if it does not belong to this user respond with error
+              } else {
                 return res.json(400, errors.tesselDoesNotExist);
               }
             })
