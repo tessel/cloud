@@ -6,49 +6,59 @@ var TesselsController = {};
 
 var errors = {
   tesselDoesNotExist: {
-    code: 400,
-    error: 'invalid_request',
-    error_description: 'Tessel does not exist.'
+    ok: false,
+    error: {
+      type: 'invalid_request',
+      message: 'Tessel does not exist.'
+    }
   },
 
   tesselExists: {
-    code: 400,
-    error: 'invalid_request',
-    error_description: 'Tessel already exists'
+    ok: false,
+    error: {
+      type: 'invalid_request',
+      message: 'Tessel already exists'
+    }
   },
 
   create: {
-    code: 500,
-    error: 'server_error',
-    error_description: 'Error creating new Tessel.'
+    ok: false,
+    error: {
+      type: 'server_error',
+      message: 'Error creating new Tessel.'
+    }
   },
 
   update: {
-    code: 500,
-    error: 'server_error',
-    error_description: 'Error updating Tessel details.'
+    ok: false,
+    error: {
+      type: 'server_error',
+      message: 'Error updating Tessel details.'
+    }
   },
 
   del: {
-    code: 500,
-    error: 'server_error',
-    error_description: 'Error deleting Tessel.'
+    ok: false,
+    error: {
+      type: 'server_error',
+      message: 'Error deleting Tessel.'
+    }
   },
 
   missingParams: {
-    code: 400,
-    error: 'invalid_request',
-    error_description: 'Request missing necessary params to create/update Tessel.'
+    ok: false,
+    error: {
+      type: 'invalid_request',
+      message: 'Request missing necessary params to create/update Tessel.'
+    }
   },
 };
 
 TesselsController.create = function(req, res) {
   var params = req.body;
 
-
   if (!params.api_key || !params.device_id) {
-    res.status = 400;
-    return res.json(errors.missingParams);
+    return res.json(400, errors.missingParams);
   }
 
   // Check if the tessel already exists
@@ -57,16 +67,14 @@ TesselsController.create = function(req, res) {
 
     .error(function(err) {
       console.log(err);
-      res.status = 500;
-      return res.json(errors.create);
+      return res.json(500, errors.create);
     })
 
     .success(function(tessel) {
       // since we are not allowing multiple users per tessel at the momment,
       // if it does exist respond with an error.
       if (!!tessel) {
-        res.status = 400;
-        return res.json(errors.tesselExists);
+        return res.json(400, errors.tesselExists);
       }
 
       // Look up the user to associate the api_key
@@ -94,8 +102,8 @@ TesselsController.create = function(req, res) {
                   .success(function() {
                     // Everything goo return success message
                     return res.json({
-                      code: 200,
-                      message: "Tessel was created successfully"
+                      ok: true
+                      data: "Tessel was created successfully"
                     });
                   })
               });
@@ -119,8 +127,7 @@ TesselsController.update = function(req, res) {
   params.id = req.params.id;
 
   if (!params.api_key || !params.id) {
-    res.status = 400;
-    return res.json(errors.missingParams);
+    return res.json(400, errors.missingParams);
   }
 
   // lookup user, it will always exist because it just passed
@@ -129,8 +136,7 @@ TesselsController.update = function(req, res) {
     .find({ where: { apiKey: params.api_key }})
 
     .error(function(err) {
-      res.status = 500;
-      return res.json(errors.update);
+      return res.json(500, errors.update);
     })
 
     .success(function(user) {
@@ -153,8 +159,8 @@ TesselsController.update = function(req, res) {
                   .update(params.tessel)
                   .success(function() {
                     return res.json({
-                      code: 200,
-                      message: "Tessel was updated successfully"
+                      ok: true,
+                      data: "Tessel was updated successfully"
                     });
                   });
               }else{
@@ -172,8 +178,7 @@ TesselsController.delete = function(req, res) {
   params.id = req.params.id;
 
   if (!params.api_key || !params.id) {
-    res.status = 400;
-    return res.json(errors.missingParams);
+    return res.json(400, errors.missingParams);
   }
 
   // lookup user, it will always exist because it just passed
@@ -182,8 +187,7 @@ TesselsController.delete = function(req, res) {
     .find({ where: { apiKey: params.api_key }})
 
     .error(function(err) {
-      res.status = 500;
-      return res.json(errors.update);
+      return res.json(500, errors.update);
     })
 
     .success(function(user) {
@@ -209,8 +213,8 @@ TesselsController.delete = function(req, res) {
                       .destroy()
                       .success(function() {
                         return res.json({
-                          code: 200,
-                          message: "Tessel was deleted successfully"
+                          ok: true,
+                          data: "Tessel was deleted successfully"
                         });
                       });
                   });
