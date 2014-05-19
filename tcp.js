@@ -21,6 +21,8 @@ var onConnection = function onConnection(socket) {
     if (/^id: (.*)$/.test(data)) {
       deviceId = data.match(/^id: (.*)$/)[1];
       connections[deviceId] = socket;
+
+      // we use Node's built-in IPC to send data back to the cluster master
       process.send({command: 'add', data: deviceId})
     }
 
@@ -30,6 +32,8 @@ var onConnection = function onConnection(socket) {
   socket.on('end', function() {
     if (deviceId) {
       delete connections[deviceId];
+
+      // let the cluster master know that the tessel has been disconnected
       process.send({command: 'delete', data: deviceId})
 
       debug('client %s disconnected', deviceId);
@@ -64,6 +68,8 @@ var sendFile = function sendFile(device, filename) {
   debug('starting to stream file to %s', device);
   connection.write('file-start');
 
+  // Using the `through` module, we stream the file from disk to the tessel over
+  // the TCP socket
   stream.pipe(through(write, end, { autoDestroy: false }));
 };
 

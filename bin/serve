@@ -1,9 +1,29 @@
 #!/usr/bin/env node
 require('dotenv').load();
 
+// This script will do the following:
+//
+// 1. On the process it's run on ('Master'), it will spin up the API server.
+// 2. For each CPU on the system, it will create a new cluster node ('Node')
+//    that will run an instance of the TCP server (tcp.js).
+//
+// The Master and Nodes communicate over the cluster module's built-in
+// communication, using `process.send` to send messages from a Node to the
+// Master, and `worker.send` to do the reverse.
+//
+// If a Node happens to crash, this will be logged to the debug console, and
+// a new Node spun up to take it's place.
+
 var cluster = require('cluster'),
     cpus = require('os').cpus();
 
+// The Debug module will only print to the console conditionally based on the
+// setting of the 'DEBUG' environment variable. By default, it no-ops.
+//
+// So, if you wanted to log all master, API, and TCP activity, you'd run the
+// command like this:
+//
+//    $ DEBUG=master,tcp*,api bin/serve
 var debug = require('debug')('master');
 
 var handleWorkerMessage = function (worker) {
