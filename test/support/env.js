@@ -22,6 +22,6 @@ chai.use(sinonChai);
 // can be used by test modules to require production modules,
 // relative to the base path
 global.source = function (src) {
-  var resource = require('path').normalize('../' + src);
+  var resource = require('path').normalize('../../' + src);
   return require(resource);
 };
