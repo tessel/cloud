@@ -2,7 +2,7 @@
 
 var OAuth2 = require('oauth').OAuth2,
     restler = require('restler'),
-    oauthConfig = require('../config/oauth.json');
+    oauthConfig = require('../config/oauth.js');
 
 var db = require('../models'),
     User = db.User;
@@ -52,7 +52,7 @@ ApplicationController.authenticate = function(req, res, next) {
   // We use the CLIENT_ID and CLIENT_SECRET
   // defined in .env file.
   // The rest of the OAuth2 config details can
-  // be found in ./config/oauth.json (server, paths to
+  // be found in ./config/oauth.js (server, paths to
   // different resrouces etc.
   var clientId = process.env.CLIENT_ID,
       clientSecret = process.env.CLIENT_SECRET,
