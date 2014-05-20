@@ -11,12 +11,26 @@ var V1Controller = {}
 
 var cluster = require('../cluster');
 
-var errors = {
+V1Controller.errors = {
   notFound: {
     ok: false,
     error: {
       type: "Permission Denied",
       message: "I didn't recognize that core name or ID"
+    }
+  },
+  noFile: {
+    ok: false,
+    error: {
+      type: 'No File Pushed',
+      message: 'A file was not pushed as part of the request'
+    }
+  },
+  unreachable: {
+    ok: false,
+    error: {
+      type: "Not Found",
+      message: "Your Tessel is not reachable at this time."
     }
   }
 }
@@ -45,47 +59,51 @@ V1Controller.list = function(req, res) {
 
 // Returns data on a specific tessel, if the user has access
 V1Controller.details = function(req, res) {
-  Tessel.find({
-    include: [ User ],
-    where: { device_id: req.params.device_id, }
-  }).success(function(tessel) {
-    var users = tessel.users.filter(function(user) {
-      return user.apiKey === req.apiKey;
-    });
+  var self = this;
 
-    if (users.length === 0) {
-      return res.json(403, errors.notFound);
-    }
+  Tessel
+    .find({
+      include: [ User ],
+      where: { device_id: req.params.device_id, }
+    })
+    .success(function(tessel) {
+      var users = tessel.users.filter(function(user) {
+        return user.apiKey === req.apiKey;
+      });
 
-    res.json({
-      ok: true,
-      data: {
-        id: tessel.device_id,
-        lastPush: tessel.lastPush,
-        lastPushChecksum: tessel.lastPushChecksum
+      if (users.length === 0) {
+        return res.json(403, self.errors.notFound);
       }
+
+      res.json({
+        ok: true,
+        data: {
+          id: tessel.device_id,
+          lastPush: tessel.lastPush,
+          lastPushChecksum: tessel.lastPushChecksum
+        }
+      });
     });
-  });
 };
 
 // Pushes source to the Tessel
 V1Controller.push = function(req, res) {
+  var self = this;
+
   Tessel.find({
     include: [ User ],
     where: { device_id: req.params.device_id, }
   }).success(function(tessel) {
     if (!tessel) {
-      return res.json(403, errors.notFound);
+      return res.json(403, self.errors.notFound);
     }
 
     var users = tessel.users.filter(function(user) {
       return user.apiKey === req.apiKey;
     });
 
-    console.log(tessel.users[0].apiKey, req.apiKey);
-
     if (users.length === 0) {
-      return res.json(403, errors.notFound);
+      return res.json(403, self.errors.notFound);
     }
 
     var form = new formidable.IncomingForm();
@@ -95,6 +113,10 @@ V1Controller.push = function(req, res) {
 
       for (file in files) break;
       file = files[file];
+
+      if (!file) {
+        res.json(400, self.errors.noFile)
+      }
 
       if (cluster.isConnected(tessel.device_id)) {
         cluster.sendFile(tessel.device_id, file.path);
@@ -118,13 +140,7 @@ V1Controller.push = function(req, res) {
           })
         });
       } else {
-        return res.json(404, {
-          ok: false,
-          error: {
-            type: "Not Found",
-            message: "Your Tessel is not reachable at this time."
-          }
-        });
+        return res.json(404, self.errors.unreachable);
       }
     });
   });
