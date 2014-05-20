@@ -1,7 +1,7 @@
 BIN := ./node_modules/.bin
 TEST_FILES := test/support/env.js $(shell find test/specs -type f -name "*.js")
 
-.PHONY: serve test bdd
+.PHONY: serve test bdd migrate migrate-rollback migration
 
 test:
 	@$(BIN)/mocha --colors $(TEST_FILES)
