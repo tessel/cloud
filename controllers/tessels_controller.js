@@ -4,7 +4,9 @@ var db = require('../models'),
 
 var TesselsController = {};
 
-var errors = {
+var debug = require('debug')('tcp');
+
+TesselsController.errors = {
   tesselDoesNotExist: {
     ok: false,
     error: {
@@ -55,10 +57,11 @@ var errors = {
 };
 
 TesselsController.create = function(req, res) {
-  var deviceID = req.body.device_id;
+  var deviceID = req.body.device_id,
+      self = this;
 
   if (!req.apiKey || !deviceID) {
-    return res.json(400, errors.missingParams);
+    return res.json(400, self.errors.missingParams);
   }
 
   // Check if the tessel already exists
@@ -66,21 +69,22 @@ TesselsController.create = function(req, res) {
     .find({ where: { device_id: deviceID } })
 
     .error(function(err) {
-      console.log(err);
-      return res.json(500, errors.create);
+      debug(err);
+      return res.json(500, self.errors.create);
     })
 
     .success(function(tessel) {
       if (!!tessel) {
-        return res.json(400, errors.tesselExists);
+        return res.json(400, self.errors.tesselExists);
       }
+        console.log("HELLO");
 
       User
         .find({ where: { apiKey: req.apiKey } })
 
         .error(function(err) {
-          console.log(err);
-          return res.json(500, errors.create);
+          debug(err);
+          return res.json(500, self.errors.create);
         })
 
         .success(function(user) {
@@ -91,8 +95,8 @@ TesselsController.create = function(req, res) {
               .create({ device_id: deviceID })
 
               .error(function(err) {
-                console.log(err);
-                return res.json(500, errors.create);
+                debug(err);
+                return res.json(500, self.errors.create);
               })
 
               .success(function(tessel) {
@@ -106,17 +110,18 @@ TesselsController.create = function(req, res) {
                   })
               });
           } else {
-            return res.json(500, errors.create);
+            return res.json(500, self.errors.create);
           }
         });
     });
 };
 
 TesselsController.update = function(req, res) {
-  var params = req.body;
+  var params = req.body,
+      self = this;
 
   if (!req.apiKey || !req.params.id) {
-    return res.json(400, errors.missingParams);
+    return res.json(400, self.errors.missingParams);
   }
 
   User

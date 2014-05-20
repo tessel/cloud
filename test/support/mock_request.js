@@ -10,6 +10,10 @@ var MockRequest = module.exports = function MockRequest(opts) {
     opts = {};
   }
 
+  // defaults
+  this.body = {};
+  this.params = {};
+
   var opt;
 
   for (opt in opts) {
