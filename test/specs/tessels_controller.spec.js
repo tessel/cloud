@@ -126,9 +126,6 @@ describe("TesselsController", function() {
     });
   });
 
-  describe("#update", function() {
-  });
-
   describe("#delete", function() {
   });
 });

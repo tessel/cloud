@@ -31,14 +31,6 @@ TesselsController.errors = {
     }
   },
 
-  update: {
-    ok: false,
-    error: {
-      type: 'server_error',
-      message: 'Error updating Tessel details.'
-    }
-  },
-
   del: {
     ok: false,
     error: {
@@ -51,7 +43,7 @@ TesselsController.errors = {
     ok: false,
     error: {
       type: 'invalid_request',
-      message: 'Request missing necessary params to create/update Tessel.'
+      message: 'Request missing necessary params to create Tessel.'
     }
   },
 };
@@ -115,49 +107,6 @@ TesselsController.create = function(req, res) {
     });
 };
 
-TesselsController.update = function(req, res) {
-  var params = req.body,
-      self = this;
-
-  if (!req.apiKey || !req.params.id) {
-    return res.json(400, self.errors.missingParams);
-  }
-
-  User
-    .find({ where: { apiKey: req.apiKey }})
-
-    .error(function(err) {
-      return res.json(500, errors.update);
-    })
-
-    .success(function(user) {
-      Tessel
-        .find({ where: { id: req.params.id } })
-        .success(function(tessel) {
-          if (!tessel) {
-            return res.json(400, errors.tesselDoesNotExist);
-          }
-
-          user
-            .hasTessel(tessel)
-            .success(function(result) {
-              if (result) {
-                tessel
-                  .update(params.tessel)
-                  .success(function() {
-                    return res.json({
-                      ok: true,
-                      data: "Tessel was updated successfully"
-                    });
-                  });
-              } else {
-                return res.json(400, errors.tesselDoesNotExist);
-              }
-            })
-        })
-    });
-};
-
 TesselsController.delete = function(req, res) {
   var params = req.body;
 
@@ -169,7 +118,7 @@ TesselsController.delete = function(req, res) {
     .find({ where: { apiKey: req.apiKey }})
 
     .error(function(err) {
-      return res.json(500, errors.update);
+      return res.json(500, errors.del);
     })
 
     .success(function(user) {
