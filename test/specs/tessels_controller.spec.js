@@ -18,7 +18,12 @@ describe("TesselsController", function() {
   var req, res;
 
   beforeEach(function() {
-    req = new MockRequest({ apiKey: 'apikey', body: { device_id: 'TM-00-03' } });
+    req = new MockRequest({
+      apiKey: 'apikey',
+      body: { device_id: 'TM-00-03' },
+      params: { id: 'TM-00-03'}
+    });
+
     res = new MockResponse();
   });
 
@@ -127,5 +132,84 @@ describe("TesselsController", function() {
   });
 
   describe("#delete", function() {
+    var userFindPromise, tesselFindPromise, hasTesselPromise,
+        removeTesselPromise, tesselDestroyPromise, tessel, user;
+
+    beforeEach(function() {
+      userFindPromise = new MockPromise();
+      tesselFindPromise = new MockPromise();
+      hasTesselPromise = new MockPromise();
+      removeTesselPromise = new MockPromise();
+      tesselDestroyPromise = new MockPromise();
+
+      tessel = {
+        destroy: stub().returns(tesselDestroyPromise)
+      }
+
+      user = {
+        hasTessel: stub().returns(hasTesselPromise),
+        removeTessel: stub().returns(removeTesselPromise),
+      }
+
+      stub(User, 'find').returns(userFindPromise);
+      stub(Tessel, 'find').returns(tesselFindPromise);
+    });
+
+    afterEach(function() {
+      User.find.restore();
+      Tessel.find.restore();
+    });
+
+    context("if no device_id or api_key is passed", function() {
+      it('returns a missing params error', function() {
+        delete req.params.id;
+        controller.delete(req, res);
+        expect(res.json).to.be.calledWith(400, controller.errors.missingParams);
+      });
+    });
+
+    context('if attempting to find the user returns an error', function() {
+      it('returns an error message', function() {
+        userFindPromise.error.yields();
+        controller.delete(req, res);
+        expect(res.json).to.be.calledWith(500, controller.errors.del);
+      });
+    });
+
+    context("if the tessel doesn't exist", function() {
+      it('returns an error message', function() {
+        userFindPromise.success.yields(user);
+        tesselFindPromise.success.yields();
+        controller.delete(req, res);
+        expect(res.json).to.be.calledWith(400, controller.errors.tesselDoesNotExist);
+      });
+    });
+
+    context("if the User doesn't own the tessel", function() {
+      it('returns an error message', function() {
+        userFindPromise.success.yields(user);
+        tesselFindPromise.success.yields(tessel);
+        hasTesselPromise.success.yields(false);
+
+        controller.delete(req, res);
+        expect(res.json).to.be.calledWith(400, controller.errors.tesselDoesNotExist);
+      });
+    });
+
+    context('if the Tessel is removed from the User and destroyed', function() {
+      it('returns a message indicating as such', function() {
+        userFindPromise.success.yields(user);
+        tesselFindPromise.success.yields(tessel);
+        hasTesselPromise.success.yields(true);
+        removeTesselPromise.success.yields();
+        tesselDestroyPromise.success.yields();
+
+        controller.delete(req, res);
+        expect(res.json).to.be.calledWith({
+          ok: true,
+          data: "Tessel was deleted successfully"
+        })
+      });
+    });
   });
 });

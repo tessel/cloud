@@ -108,17 +108,17 @@ TesselsController.create = function(req, res) {
 };
 
 TesselsController.delete = function(req, res) {
-  var params = req.body;
+  var self = this;
 
   if (!req.apiKey || !req.params.id) {
-    return res.json(400, errors.missingParams);
+    return res.json(400, self.errors.missingParams);
   }
 
   User
     .find({ where: { apiKey: req.apiKey }})
 
     .error(function(err) {
-      return res.json(500, errors.del);
+      return res.json(500, self.errors.del);
     })
 
     .success(function(user) {
@@ -126,7 +126,7 @@ TesselsController.delete = function(req, res) {
         .find({ where: { id: req.params.id } })
         .success(function(tessel) {
           if (!tessel) {
-            return res.json(400, errors.tesselDoesNotExist);
+            return res.json(400, self.errors.tesselDoesNotExist);
           }
 
           user
@@ -146,7 +146,7 @@ TesselsController.delete = function(req, res) {
                       });
                   });
               } else {
-                return res.json(400, errors.tesselDoesNotExist);
+                return res.json(400, self.errors.tesselDoesNotExist);
               }
             })
         })
