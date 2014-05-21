@@ -9,6 +9,11 @@ var db = source('models'),
 var MockRequest = require('../support/mock_request'),
     MockResponse = require('../support/mock_response');
 
+var MockPromise = function MockPromise() {
+  this.error = stub().returns(this);
+  this.success = stub().returns(this);
+}
+
 describe("TesselsController", function() {
   var req, res;
 
@@ -17,23 +22,30 @@ describe("TesselsController", function() {
     res = new MockResponse();
   });
 
-  afterEach(function() {
-  });
-
   describe("#create", function() {
-    var promise;
+    var tesselFindPromise, userFindPromise, tesselCreatePromise, addUserPromise,
+        tessel;
 
     beforeEach(function() {
-      promise = {
-        success: stub().returns(promise),
-        error: stub().returns(promise)
-      };
+      tesselFindPromise = new MockPromise();
+      userFindPromise = new MockPromise();
+      tesselCreatePromise = new MockPromise();
 
-      stub(Tessel, 'find').returns(promise);
+      addUserPromise = new MockPromise();
+
+      tessel = {
+        addUser: stub().returns(addUserPromise)
+      }
+
+      stub(Tessel, 'find').returns(tesselFindPromise);
+      stub(Tessel, 'create').returns(tesselCreatePromise);
+      stub(User, 'find').returns(userFindPromise);
     });
 
     afterEach(function() {
       Tessel.find.restore();
+      Tessel.create.restore();
+      User.find.restore();
     });
 
     context("if no device_id or api_key is passed", function() {
@@ -46,7 +58,7 @@ describe("TesselsController", function() {
 
     context('if an error occurs while searching for existing tessels', function() {
       it('returns a create error', function() {
-        promise.error.yields();
+        tesselFindPromise.error.yields();
         controller.create(req, res);
         expect(res.json).to.be.calledWith(500, controller.errors.create);
       });
@@ -54,6 +66,62 @@ describe("TesselsController", function() {
 
     context('if the tessel is already registered', function() {
       it('returns a error indicating the tessel already exists', function() {
+        tesselFindPromise.success.yields(true);
+        controller.create(req, res);
+        expect(res.json).to.be.calledWith(400, controller.errors.tesselExists);
+      });
+    });
+
+    context('if an error is found while looking up the User', function() {
+      it('returns a create error', function() {
+        tesselFindPromise.success.yields();
+        userFindPromise.error.yields();
+
+        controller.create(req, res);
+        expect(res.json).to.be.calledWith(500, controller.errors.create);
+      });
+    });
+
+    context("if the specified User doesn't exist", function() {
+      it('returns a create error', function() {
+        tesselFindPromise.success.yields();
+        userFindPromise.success.yields();
+
+        controller.create(req, res);
+        expect(res.json).to.be.calledWith(500, controller.errors.create);
+      });
+    });
+
+    context('if an error occurs while creating the Tessel', function() {
+      it('returns a create error', function() {
+        tesselFindPromise.success.yields();
+        userFindPromise.success.yields();
+        tesselCreatePromise.error.yields();
+
+        controller.create(req, res);
+        expect(res.json).to.be.calledWith(500, controller.errors.create);
+      });
+    });
+
+    context('if the Tessel is created successfully', function() {
+      beforeEach(function() {
+        tesselFindPromise.success.yields();
+        userFindPromise.success.yields('user');
+        tesselCreatePromise.success.yields(tessel);
+        addUserPromise.success.yields();
+      });
+
+      it('adds a relation between the User and Tessel', function() {
+        controller.create(req, res);
+        expect(tessel.addUser).to.be.calledWith('user');
+      })
+
+      it('returns a message indicating as such', function() {
+        controller.create(req, res);
+        expect(res.json).to.be.calledWith({
+          ok: true,
+          data: "Tessel was created successfully"
+        })
       });
     });
   });

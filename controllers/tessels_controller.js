@@ -77,7 +77,6 @@ TesselsController.create = function(req, res) {
       if (!!tessel) {
         return res.json(400, self.errors.tesselExists);
       }
-        console.log("HELLO");
 
       User
         .find({ where: { apiKey: req.apiKey } })
