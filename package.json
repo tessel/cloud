@@ -2,33 +2,29 @@
   "name": "tessel-cloud",
   "version": "0.0.1",
   "private": true,
-
   "scripts": {
     "start": "node ./bin/www"
   },
-
   "devDependencies": {
     "sinon-chai": "2.5.0",
-    "chai":       "1.9.1",
-    "mocha":      "1.18.2",
-    "sinon":      "1.9.1"
+    "chai": "1.9.1",
+    "mocha": "1.18.2",
+    "sinon": "1.9.1"
   },
-
   "dependencies": {
+    "body-parser": "1.0.0",
+    "cookie-parser": "^1.3.2",
+    "debug": "0.7.4",
+    "dotenv": "0.2.8",
     "express": "4.0.0",
-
-    "morgan":         "1.0.0",
-    "body-parser":    "1.0.0",
-    "formidable":     "1.0.14",
-
-    "debug":          "0.7.4",
-    "dotenv":         "0.2.8",
-
-    "pg":             "3.0.3",
-    "sequelize":      "2.0.0-dev11",
-    "oauth":          "0.9.11",
-    "restler":        "3.2.2",
-
-    "through":        "2.3.4"
+    "express-session": "^1.7.2",
+    "formidable": "1.0.14",
+    "morgan": "1.0.0",
+    "oauth": "0.9.11",
+    "pg": "3.0.3",
+    "rem": "^0.7.0-2",
+    "restler": "3.2.2",
+    "sequelize": "2.0.0-dev11",
+    "through": "2.3.4"
   }
 }
