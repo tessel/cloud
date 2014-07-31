@@ -13,6 +13,7 @@ var express = require('express')
   , bodyParser = require('body-parser')
   , cookieParser = require('cookie-parser')
   , multipart = require('connect-multiparty')
+  , accepts = require('accepts')
   , session = require('express-session')
   , rem = require('rem')
 
@@ -96,6 +97,17 @@ app.get('/profile', function (req, res) {
     // json contains "username", "email", "name", and "apiKey"
     res.send('<h1>Hello ' + json.email + '!</h1>');
   });
+});
+
+app.use('/api*', function(req, res, next) {
+  var accept = accepts(req);
+  if (accept.types('application/vnd.tessel.remote.v1')) {
+    next();
+  } else {
+    return res.json(400, {
+      message: "Incorrect API version"
+    });
+  }
 });
 
 // Default routes.
