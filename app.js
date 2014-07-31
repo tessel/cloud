@@ -12,6 +12,7 @@ var express = require('express')
   , debug = require('debug')('api')
   , bodyParser = require('body-parser')
   , cookieParser = require('cookie-parser')
+  , multipart = require('connect-multiparty')
   , session = require('express-session')
   , rem = require('rem')
 
@@ -37,6 +38,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
+app.use(multipart());
 app.use(session({
   secret: "what is the secret who has the secret"
 }));

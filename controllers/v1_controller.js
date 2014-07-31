@@ -11,7 +11,7 @@ var V1Controller = {}
 
 var cluster = require('../cluster');
 
-V1Controller.errors = {
+var errors = {
   notFound: {
     ok: false,
     error: {
@@ -72,7 +72,7 @@ V1Controller.details = function(req, res) {
       });
 
       if (users.length === 0) {
-        return res.json(403, self.errors.notFound);
+        return res.json(403, errors.notFound);
       }
 
       res.json({
@@ -95,7 +95,7 @@ V1Controller.push = function(req, res) {
     where: { device_id: req.params.device_id, }
   }).success(function(tessel) {
     if (!tessel) {
-      return res.json(403, self.errors.notFound);
+      return res.json(403, errors.notFound);
     }
 
     var users = tessel.users.filter(function(user) {
@@ -103,46 +103,41 @@ V1Controller.push = function(req, res) {
     });
 
     if (users.length === 0) {
-      return res.json(403, self.errors.notFound);
+      return res.json(403, errors.notFound);
     }
 
-    var form = new formidable.IncomingForm();
+    var file;
+    file = req.files['script_tar'];
 
-    form.parse(req, function(err, fields, files) {
-      var file;
+    if (!file) {
+      res.json(400, errors.noFile)
+    }
 
-      for (file in files) break;
-      file = files[file];
+    if (cluster.isConnected(tessel.device_id)) {
+      cluster.sendFile(tessel.device_id, file.path);
 
-      if (!file) {
-        res.json(400, self.errors.noFile)
-      }
+      var hash = crypto.createHash('md5'),
+          stream = fs.createReadStream(file.path);
 
-      if (cluster.isConnected(tessel.device_id)) {
-        cluster.sendFile(tessel.device_id, file.path);
+      stream.on('data', function (data) {
+        hash.update(data, 'utf8');
+      });
 
-        var hash = crypto.createHash('md5'),
-            stream = fs.createReadStream(file.path);
+      stream.on('end', function () {
+        tessel.lastPush = new Date();
+        tessel.lastPushChecksum = hash.digest('hex');
 
-        stream.on('data', function (data) {
-          hash.update(data, 'utf8');
-        });
+        tessel.save();
 
-        stream.on('end', function () {
-          tessel.lastPush = new Date();
-          tessel.lastPushChecksum = hash.digest('hex');
+        res.json({
+          ok: true,
+          data: "Your code is uploading to your Tessel now."
+        })
+      });
+    } else {
+      return res.json(404, errors.unreachable);
+    }
 
-          tessel.save();
-
-          res.json({
-            ok: true,
-            data: "Your code is uploading to your Tessel now."
-          })
-        });
-      } else {
-        return res.json(404, self.errors.unreachable);
-      }
-    });
   });
 };
 
