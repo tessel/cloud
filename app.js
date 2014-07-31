@@ -99,7 +99,7 @@ app.get('/profile', function (req, res) {
 });
 
 // Default routes.
-app.use('/', routes);
+app.use('/', routes(oauth));
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {

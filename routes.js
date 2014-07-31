@@ -4,17 +4,31 @@ var router = require('express').Router();
 
 var App   = require('./controllers/application_controller'),
     Tessels = require('./controllers/tessels_controller'),
-    v1    = require('./controllers/v1_controller');
+    Remote = require('./controllers/remote_controller'),
+    Config = require('./controllers/configuration_controller');
 
-// Tessel routes
-router.all('/tessels*', App.authenticate)
-router.post('/tessels', Tessels.create);
-router.delete('/tessels/:id', Tessels.delete);
+module.exports = function(oauth){
+  Oauth = require('./controllers/oauth_controller')(oauth);
 
-// API /v1 routes
-router.all('/v1/*', App.authenticate)
-router.get('/v1/tessels', v1.list)
-router.get('/v1/tessels/:device_id', v1.details)
-router.put('/v1/tessels/:device_id', v1.push)
+  // API key settings routes
+  router.all('/api/user/apikey*', Oauth.authenticate);
+  router.get('/api/user/apikey', Config.apiKey); // get existing API key
+  router.post('/api/user/apikey', Config.genApiKey); // create and get new API key
 
-module.exports = router;
+  // Authenticate API routes with API key
+  router.all('/api/tessel*', App.authenticate);
+
+  // Tessel routes
+  router.post('/api/tessel', Tessels.create); // create new remote Tessel
+  router.get('/api/tessel/:device_id', Tessels.details); // list details for one Tessel
+  router.put('/api/tessel/:device_id', Tessels.update); // update Tessel nickname/ allowed users
+  router.delete('/api/tessel/:device_id', Tessels.delete); // delete remote Tessel
+  router.get('/api/tessel', Tessels.list); // list details for all of user's Tessels
+
+  // Remote control routes
+  router.put('/api/tessel/:device_id/code', Remote.code); // tessel run or push as decided by attributes
+  router.get('/api/tessel/:device_id/network', Remote.network); // get network connection details
+  router.get('/api/tessel/:device_id/log', Remote.log); // start listening
+
+  return router;
+}
