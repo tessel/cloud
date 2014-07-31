@@ -5,13 +5,14 @@ var router = require('express').Router();
 var App   = require('./controllers/application_controller'),
     Tessels = require('./controllers/tessels_controller'),
     Remote = require('./controllers/remote_controller'),
-    Config = require('./controllers/configuration_controller');
+    Config = require('./controllers/configuration_controller'),
+    Oauth = require('./controllers/oauth_controller');
 
 module.exports = function(oauth){
-  Oauth = require('./controllers/oauth_controller')(oauth);
+  var OController = new Oauth(oauth);
 
   // API key settings routes
-  router.all('/api/user/apikey*', Oauth.authenticate);
+  router.all('/api/user/apikey*', OController.authenticate);
   router.get('/api/user/apikey', Config.apiKey); // get existing API key
   router.post('/api/user/apikey', Config.genApiKey); // create and get new API key
 

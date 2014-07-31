@@ -1,5 +1,3 @@
-'use strict';
-
 var errors = {
   unimplemented : {
     ok: false,
@@ -12,8 +10,8 @@ var errors = {
 
 // TODO - implement placeholder methods, refactor Oauth routes out of app.js
 
-var OauthController = function(oauth) {
-  this.ouath = oauth;
+function OauthController(oauth) {
+  this.oauth = oauth;
 };
 
 OauthController.prototype.authenticate = function(req, res, next) {
