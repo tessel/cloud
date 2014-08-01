@@ -1,7 +1,7 @@
 'use strict';
 
 var OAuth2 = require('oauth').OAuth2,
-    restler = require('restler'),
+    http = require('http'),
     oauthConfig = require('../config/oauth');
 
 var db = require('../models'),
@@ -80,15 +80,28 @@ ApplicationController.authenticate = function(req, res, next) {
 
     .success(function(user) {
       if (user) {
-        restler
-          .get(profilePath, { query: { access_token: user.accessToken } })
-          .on('complete', function(data, response) {
-            if (data.apiKey === req.apiKey) {
-              next();
-            } else {
-              return res.json(400, errors.incorrectApiKey);
-            }
-          });
+        var reqPath = '/' + oauthConfig.profilePath +
+          '?access_token=' + user.accessToken;
+        var authGet = http.get(
+          {
+            host: oauthConfig.server,
+            port: 3002,
+            path: reqPath
+          } , function (authRes) {
+            authRes.setEncoding('utf8');
+            authRes.on('data', function(data){
+              if (JSON.parse(data).username === user.username) {
+                next();
+              } else {
+                return res.json(400, errors.incorrectApiKey);
+              }
+            });
+          }
+        );
+        authGet.on('error', function(e){
+          return res.json(400, e);
+        });
+        authGet.end();
       } else {
         return res.json(400, errors.incorrectApiKey);
       }
