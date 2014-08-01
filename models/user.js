@@ -12,6 +12,22 @@ module.exports = function User(sequelize, DataTypes) {
       associate: function(models) {
         User.hasMany(models.Tessel)
       }
+    },
+    instanceMethods: {
+      genApiKey: function(){
+        var d = Date.now();
+        var apikey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
+        apikey = apikey.replace(/[xy]/g, function(c) {
+          var r = (d + Math.random() * 16) % 16 | 0;
+          d = Math.floor(d / 16);
+          return (c === 'x' ? r : (r&0x7|0x8)).toString(16);
+        });
+
+        this.apiKey = apikey;
+
+        return this;
+      }
     }
   });
 
