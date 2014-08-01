@@ -47,15 +47,15 @@ app.use(session({
 // Create our API client.
 var tesselauth = rem.createClient({
   "id": "tessel.io",
-  "base": "https://auth.tessel.io",
+  "base": process.env.OAUTH_SERVER,
   "auth": {
     "type": "oauth",
     "version": "2.0",
-    "base": "https://auth.tessel.io",
+    "base": process.env.OAUTH_SERVER,
     "authorizePath": "/oauth/authorise",
     "tokenPath": "/oauth/token",
     "params": {
-      "scope": ["https://tessel-grant"],
+      "scope": [process.env.GRANT_TYPE],
       "response_type": "code"
     },
     "validate": "/profile",
@@ -63,8 +63,8 @@ var tesselauth = rem.createClient({
     "oobVerifier": false,
   },
 }, {
-  key: process.env.OAUTH_KEY,
-  secret: process.env.OAUTH_SECRET,
+  key: process.env.CLIENT_ID,
+  secret: process.env.CLIENT_SECRET,
 });
 
 // Create the OAuth interface.
