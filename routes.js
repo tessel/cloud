@@ -11,6 +11,11 @@ var App   = require('./controllers/application_controller'),
 module.exports = function(oauth){
   var OController = new Oauth(oauth);
 
+  // OAuthentication routes
+  router.get('/login', OController.login.bind(OController));
+  router.get('/logout', OController.logout.bind(OController));
+  router.get('/profile', OController.profile.bind(OController));
+
   // API key settings routes
   router.all('/api/user/apikey*', OController.authenticate);
   router.get('/api/user/apikey', Config.apiKey); // get existing API key
@@ -27,7 +32,7 @@ module.exports = function(oauth){
   router.get('/api/tessel', Tessels.list); // list details for all of user's Tessels
 
   // Remote control routes
-  router.put('/api/tessel/:device_id/code', Remote.code); // tessel run or push as decided by attributes
+  router.post('/api/tessel/:device_id/code', Remote.code); // tessel run or push as decided by attributes
   router.get('/api/tessel/:device_id/network', Remote.network); // get network connection details
   router.get('/api/tessel/:device_id/log', Remote.log); // start listening
 

@@ -73,31 +73,8 @@ var oauth = rem.oauth(tesselauth, process.env.OAUTH_REDIRECT);
 // oauth.middleware intercepts the callback url that we set when we
 // created the oauth middleware.
 app.use(oauth.middleware(function (req, res, next) {
-  console.log("User is now authenticated.");
   res.redirect('/profile');
 }));
-
-// oauth.login() is a route to redirect to the OAuth login endpoint.
-// Use oauth.login({ scope: ... }) to set your oauth scope(s).
-app.get('/login', oauth.login());
-
-// Logout URL clears the user's session.
-app.get('/logout', oauth.logout(function (req, res) {
-  res.redirect('/profile');
-}));
-
-app.get('/profile', function (req, res) {
-  var user = oauth.session(req);
-  if (!user) {
-    return res.redirect(301, "/login");
-  }
-
-  // Make an authenticated request to oauth server for our info.
-  user.json('users/profile').get(function (err, json, last) {
-    // json contains "username", "email", "name", and "apiKey"
-    res.send('<h1>Hello ' + json.email + '!</h1>');
-  });
-});
 
 app.use('/api*', function(req, res, next) {
   var accept = accepts(req);

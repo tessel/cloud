@@ -19,12 +19,27 @@ OauthController.prototype.authenticate = function(req, res, next) {
 };
 
 OauthController.prototype.login = function(req, res) {
-  return this.oauth.login();
+  var login = this.oauth.login();
+  return login(req, res);
 }
 
 OauthController.prototype.logout = function(req, res) {
-  return this.oauth.logout(function(req, res) {
-    res.redirect('/profile');
+  var logout = this.oauth.logout(function(req, res) {
+    res.redirect('/');
+  });
+  return logout(req, res);
+}
+
+OauthController.prototype.profile = function(req, res) {
+  var user = this.oauth.session(req);
+  if (!user) {
+    return res.redirect(301, "/login");
+  }
+
+  // Make an authenticated request to oauth server for our info.
+  user.json('users/profile').get(function (err, json, last) {
+    // json contains "username", "email", "name", and "apiKey"
+    res.send('<h1>Hello ' + json.email + '!</h1>');
   });
 }
 
