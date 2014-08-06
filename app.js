@@ -16,8 +16,10 @@ var express = require('express')
   , accepts = require('accepts')
   , session = require('express-session')
   , rem = require('rem')
+  ;
 
-var routes = require('./routes');
+var apiRouter = require('./routes/api_routes'),
+    oauthRouter = require('./routes/oauth_routes');
 
 // connect to and synchronize database
 var db = require('./models');
@@ -26,7 +28,7 @@ db.sequelize
   .sync()
   .complete(function(err) {
     if (!!err) {
-      console.log(err);
+      debug(err);
       process.exit();
     }
 
@@ -67,15 +69,6 @@ var tesselauth = rem.createClient({
   secret: process.env.CLIENT_SECRET,
 });
 
-// Create the OAuth interface.
-var oauth = rem.oauth(tesselauth, process.env.OAUTH_REDIRECT);
-
-// oauth.middleware intercepts the callback url that we set when we
-// created the oauth middleware.
-app.use(oauth.middleware(function (req, res, next) {
-  res.redirect('/profile');
-}));
-
 app.use('/api*', function(req, res, next) {
   var accept = accepts(req);
   if (accept.types('application/vnd.tessel.remote.v1')) {
@@ -87,8 +80,13 @@ app.use('/api*', function(req, res, next) {
   }
 });
 
+
+// Create the OAuth interface.
+var oauth = rem.oauth(tesselauth, process.env.OAUTH_REDIRECT);
+app.use('/', oauthRouter(oauth));
+
 // Default routes.
-app.use('/', routes(oauth));
+app.use('/', apiRouter);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {

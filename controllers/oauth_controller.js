@@ -1,14 +1,19 @@
+var db = require('../models'),
+    User = db.User;
+
+var debug = require('debug')('api');
+
 var errors = {
-  unimplemented : {
+  authentication : {
     ok: false,
     error: {
-      type: "Not Found",
-      message: "This route is currently unimplemented"
+      type: "server_error",
+      message: "Error authorizing new user"
     }
   }
 };
 
-// TODO - implement placeholder methods, refactor Oauth routes out of app.js
+// TODO - save user data returned from /login to database
 
 function OauthController(oauth) {
   this.oauth = oauth;
@@ -43,8 +48,38 @@ OauthController.prototype.profile = function(req, res) {
   });
 }
 
-OauthController.prototype.session = function(req, res) {
-  return res.json(400, errors.unimplemented);
+OauthController.prototype.callback = function(req, res) {
+  var user = this.oauth.session(req)
+
+  if (user) {
+    user.json('users/profile').get(function(err, json, last) {
+      User
+        .findOrCreate({ email: json.email }, {
+          apiKey: User.genApiKey(),
+          accessToken: req.session['tessel.io:oauthAccessToken'],
+          refreshToken: req.session['tessel.io:oauthRefreshToken'],
+          username: json.username
+        })
+        .error(function(err){
+          debug(err);
+          return res.json(500, errors.authentication);
+        })
+        .success(function(existingUser, created){
+          if (!created) {
+            existingUser.accessToken = req.session['tessel.io:oauthAccessToken'];
+            existingUser.refreshToken = req.session['tessel.io:oauthRefreshToken'];
+            existingUser.username = json.username;
+            existingUser
+              .save()
+              .success(function(){
+                res.redirect('/profile');
+              });
+          } else {
+            res.redirect('/profile');
+          }
+        });
+    });
+  }
 }
 
 module.exports = OauthController;
