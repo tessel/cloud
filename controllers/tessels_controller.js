@@ -46,14 +46,41 @@ var errors = {
       message: 'Request missing necessary params to create Tessel.'
     }
   },
+
+  notOwner : {
+    ok: false,
+    error: {
+      type: 'invalid_request',
+      message: 'Only the Tessel owner can make changes to the Tessel.'
+    }
+  },
+
   unimplemented: {
     ok: false,
     error: {
-      type: "Not Found",
-      message: "This API endpoint is currently unimplemented"
+      type: 'Not Found',
+      message: 'This API endpoint is currently unimplemented.'
     }
   }
 };
+
+function prepareNewUsers(userString) {
+  var users = userString.split(',');
+
+  return users;
+}
+
+function createNewUsersFromEmail(tessel, newEmails) {
+  for (var i=0; i<newEmails.length; i++) {
+    User
+      .create({ email: newEmails[i], apiKey: User.genApiKey() })
+      .success(function(user){
+        tessel
+          .addUser(user)
+          .success(function(){});
+      });
+  }
+}
 
 TesselsController.create = function(req, res) {
   var deviceID = req.body.device_id,
@@ -64,6 +91,7 @@ TesselsController.create = function(req, res) {
   }
 
   // Check if the tessel already exists
+  // TODO - possible security issue telling
   Tessel
     .find({ where: { device_id: deviceID } })
 
@@ -90,7 +118,7 @@ TesselsController.create = function(req, res) {
             var tessel = Tessel
 
             Tessel
-              .create({ device_id: deviceID })
+              .create({ device_id: deviceID, connected: false, owner: user.id })
 
               .error(function(err) {
                 debug(err);
@@ -108,13 +136,14 @@ TesselsController.create = function(req, res) {
                   })
               });
           } else {
+            console.log(user);
             return res.json(500, errors.create);
           }
         });
     });
 };
 
-// Returns data on a specific tessel, if the user has access
+// Returns data on a specific Tessel, if the user has access
 TesselsController.details = function(req, res) {
   var self = this;
 
@@ -143,8 +172,100 @@ TesselsController.details = function(req, res) {
     });
 };
 
+// Updates the details of a specific Tessel
 TesselsController.update = function(req, res) {
-  return res.json(404, error.unimplemented);
+  var self = this;
+
+  console.log("received device name", req.body.deviceName);
+  console.log('received new user emails', req.body.addUsers);
+  if (!req.apiKey || !req.params.device_id || (!req.body.deviceName && req.body.addUsers)) {
+    return res.json(400, errors.missingParams);
+  }
+
+  User
+    .find({ where: {apiKey: req.apiKey }})
+
+    .error(function(err) {
+      return res.json(500, errors.update);
+    })
+
+    .success(function(user) {
+      Tessel
+        .find({ where: {device_id: req.params.device_id } })
+
+        .success(function(tessel) {
+          if (!tessel) {
+            return res.json(400, errors.tesselDoesNotExist);
+          }
+
+          user
+            .hasTessel(tessel)
+
+            .success(function(result) {
+              if (result) {
+                if (tessel.owner == user.id) {
+                  if (req.body.addUsers) {
+                    var addUsers = prepareNewUsers(req.body.addUsers);
+                    if (addUsers) {
+                      User.findAll( {
+                        where: { email: addUsers}
+                      })
+                        .success(function(users){
+                          var foundEmails = [];
+                          for (var i=0; i<users.length; i++) {
+                            foundEmails.push(users[i].values.email);
+                            users[i]
+                              .hasTessel(tessel)
+                              .success(function(result){
+                                if (!result){
+                                  tessel
+                                    .addUser(users[i])
+                                    .success(function () {});
+                                }
+                              });
+
+                            if (i==users.length-1) {
+                              var newUsers = addUsers.filter(function(value) {
+                                return foundEmails.indexOf(value) < 0;
+                              });
+                              createNewUsersFromEmail(tessel, newUsers);
+                            }
+
+                          }
+
+                          if (users.length < 1) {
+                            createNewUsersFromEmail(tessel, addUsers);
+                          }
+
+                        });
+                    }
+                  }
+                  var newName = req.body.deviceName;
+                  if (newName) {
+                    tessel.deviceName = newName;
+                    tessel
+                      .save()
+                      .success(function() {
+                        return res.json({
+                          ok: true,
+                          data: "The Tessel has been updated"
+                        });
+                      });
+                  } else {
+                    return res.json({
+                      ok: true,
+                      data: "The Tessel will be updated"
+                    });
+                  }
+                } else {
+                  return res.json(400, errors.notOwner);
+                }
+              } else {
+                return res.json(400, errors.tesselDoesNotExist);
+              }
+            });
+        });
+    });
 }
 
 TesselsController.delete = function(req, res) {
@@ -188,8 +309,8 @@ TesselsController.delete = function(req, res) {
               } else {
                 return res.json(400, errors.tesselDoesNotExist);
               }
-            })
-        })
+            });
+        });
     });
 };
 
