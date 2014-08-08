@@ -2,7 +2,7 @@ var fs = require('fs'),
     crypto = require('crypto');
 
 var db = require("../models"),
-    User = db.User
+    User = db.User,
     Tessel = db.Tessel;
 
 var RemoteController = {}
@@ -44,8 +44,6 @@ var errors = {
 RemoteController.code = function(req, res) {
   var self = this;
 
-  return res.json(404, errors.unimplemented);
-
   Tessel.find({
     include: [ User ],
     where: { device_id: req.params.device_id, }
@@ -84,7 +82,8 @@ RemoteController.code = function(req, res) {
       stream.on('end', function () {
         tessel.lastPush = new Date();
         tessel.lastPushChecksum = hash.digest('hex');
-
+        tessel.lastPushUser = req.user.id;
+        tessel.lastPushScript = file.name;
         tessel.save();
 
         res.json({
