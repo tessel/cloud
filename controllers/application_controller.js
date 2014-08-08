@@ -48,6 +48,7 @@ var getApiKey = function(req) {
 
 var ApplicationController = {};
 
+// TODO - put authenticated user in req
 ApplicationController.authenticate = function(req, res, next) {
   var clientId = process.env.CLIENT_ID,
       clientSecret = process.env.CLIENT_SECRET,
@@ -80,6 +81,7 @@ ApplicationController.authenticate = function(req, res, next) {
 
     .success(function(user) {
       if (user) {
+        req.user = user;
         var reqPath = '/' + oauthConfig.profilePath +
           '?access_token=' + user.accessToken;
         var authGet = http.get(
