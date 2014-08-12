@@ -13,8 +13,8 @@ var errors = {
   notFound: {
     ok: false,
     error: {
-      type: "Permission Denied",
-      message: "I didn't recognize that core name or ID"
+      type: "Not Found",
+      message: "Device ID was not recognized."
     }
   },
   noFile: {
