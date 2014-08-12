@@ -37,6 +37,8 @@ If you need to add more migrations, there's another `make` task for that:
 
     make migration NAME=name-of-new-migration
 
+Instructions on how to write new migrations can be found [here](http://sequelizejs.com/docs/latest/migrations).
+
 The new migration can then also be run with `make migrate`. And to rollback
 a migration:
 

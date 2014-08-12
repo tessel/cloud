@@ -2,12 +2,10 @@ var fs = require('fs'),
     crypto = require('crypto');
 
 var db = require("../models"),
-    User = db.User
+    User = db.User,
     Tessel = db.Tessel;
 
-var formidable = require('formidable');
-
-var V1Controller = {}
+var RemoteController = {}
 
 var cluster = require('../cluster');
 
@@ -32,62 +30,18 @@ var errors = {
       type: "Not Found",
       message: "Your Tessel is not reachable at this time."
     }
+  },
+  unimplemented: {
+    ok: false,
+    error: {
+      type: "Not Found",
+      message: "This API endpoint is currently unimplemented"
+    }
   }
 }
 
-// Lists all tessels belonging to the currently authenticated user
-V1Controller.list = function(req, res) {
-  User
-    .find({ where: { apiKey: req.apiKey }, include: [ Tessel ] })
-    .success(function(user) {
-      var json = {
-        ok: true,
-        data: []
-      };
-
-      user.tessels.forEach(function(tessel) {
-        json.data.push({
-          id: tessel.device_id,
-          lastPush: tessel.lastPush,
-          lastPushChecksum: tessel.lastPushChecksum
-        });
-      });
-
-      res.json(json);
-    });
-};
-
-// Returns data on a specific tessel, if the user has access
-V1Controller.details = function(req, res) {
-  var self = this;
-
-  Tessel
-    .find({
-      include: [ User ],
-      where: { device_id: req.params.device_id, }
-    })
-    .success(function(tessel) {
-      var users = tessel.users.filter(function(user) {
-        return user.apiKey === req.apiKey;
-      });
-
-      if (users.length === 0) {
-        return res.json(403, errors.notFound);
-      }
-
-      res.json({
-        ok: true,
-        data: {
-          id: tessel.device_id,
-          lastPush: tessel.lastPush,
-          lastPushChecksum: tessel.lastPushChecksum
-        }
-      });
-    });
-};
-
 // Pushes source to the Tessel
-V1Controller.push = function(req, res) {
+RemoteController.code = function(req, res) {
   var self = this;
 
   Tessel.find({
@@ -97,6 +51,8 @@ V1Controller.push = function(req, res) {
     if (!tessel) {
       return res.json(403, errors.notFound);
     }
+
+    var flash = req.body.flash == 'true' ? true : false;
 
     var users = tessel.users.filter(function(user) {
       return user.apiKey === req.apiKey;
@@ -126,7 +82,8 @@ V1Controller.push = function(req, res) {
       stream.on('end', function () {
         tessel.lastPush = new Date();
         tessel.lastPushChecksum = hash.digest('hex');
-
+        tessel.lastPushUser = req.user.id;
+        tessel.lastPushScript = file.name;
         tessel.save();
 
         res.json({
@@ -141,4 +98,12 @@ V1Controller.push = function(req, res) {
   });
 };
 
-module.exports = V1Controller;
+RemoteController.network = function(req, res) {
+  return res.json(404, errors.unimplemented);
+};
+
+RemoteController.log = function(req, res) {
+  return res.json(404, errors.unimplemented);
+}
+
+module.exports = RemoteController;

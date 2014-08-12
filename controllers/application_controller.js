@@ -1,7 +1,7 @@
 'use strict';
 
 var OAuth2 = require('oauth').OAuth2,
-    restler = require('restler'),
+    http = require('http'),
     oauthConfig = require('../config/oauth');
 
 var db = require('../models'),
@@ -12,7 +12,14 @@ var errors = {
     ok: false,
     error: {
       type: "invalid_request",
-      message: "The API key was not found"
+      message: "The API key provided is not valid"
+    }
+  },
+  keyNotFound: {
+    ok: false,
+    error: {
+      type: "Not Found",
+      message: "No API key was found in this request"
     }
   }
 };
@@ -41,6 +48,7 @@ var getApiKey = function(req) {
 
 var ApplicationController = {};
 
+// TODO - put authenticated user in req
 ApplicationController.authenticate = function(req, res, next) {
   var clientId = process.env.CLIENT_ID,
       clientSecret = process.env.CLIENT_SECRET,
@@ -61,7 +69,7 @@ ApplicationController.authenticate = function(req, res, next) {
   req.apiKey = getApiKey(req);
 
   if (!req.apiKey) {
-    return res.json(400, errors.incorrectApiKey);
+    return res.json(400, errors.keyNotFound);
   }
 
   User
@@ -73,76 +81,31 @@ ApplicationController.authenticate = function(req, res, next) {
 
     .success(function(user) {
       if (user) {
-        restler
-          .get(profilePath, { query: { access_token: user.accessToken } })
-          .on('complete', function(data, response) {
-            if (data.apiKey === req.apiKey) {
-              next();
-            } else {
-              return res.json(400, errors.incorrectApiKey);
-            }
-          });
-      } else {
-        // We use grant type `client_credentials` to avoid asking the user
-        // for username and password on signup and when re-generating the
-        // apiKey. We pass the api_key param to the OAuth2 server,
-        // the server will handle it and look up an user with it.
-        var oauthOptions = {
-              'grant_type': grantType,
-              'api_key': req.body.api_key || req.query.api_key,
-              'client_id': clientId
-            };
-
-        var clientGrantCB = function (err, accessToken, refreshToken, results) {
-          if (err) {
-            return next(err);
-          }
-
-          restler
-            .get(profilePath, { query: { access_token: accessToken } })
-            .on('complete', function(data, response) {
-              if (data.apiKey === req.apiKey) {
-                // when we have the user data from OAuth we use that to update
-                // an existing User, or create a new one.
-
-                User
-                  .findOrCreate({ username: data.username }, {
-                    apiKey: data.apiKey,
-                    accessToken: accessToken,
-                    refreshToken: refreshToken
-                  })
-
-                  .error(function(err) {
-                    next(err);
-                  })
-
-                  .success(function(user, created) {
-                    // if the model wasn't created, we need to update the
-                    // appropriate fields
-                    if (!created) {
-                      user.accessToken = accessToken;
-                      user.refreshToken = refreshToken;
-                      user.apiKey = data.apiKey;
-
-                      user
-                        .save()
-
-                        .error(function(err) {
-                          next(err);
-                        })
-
-                        .success(function() {
-                          next();
-                        });
-                    }
-                  });
+        req.user = user;
+        var reqPath = '/' + oauthConfig.profilePath +
+          '?access_token=' + user.accessToken;
+        var authGet = http.get(
+          {
+            host: oauthConfig.server,
+            port: 3002,
+            path: reqPath
+          } , function (authRes) {
+            authRes.setEncoding('utf8');
+            authRes.on('data', function(data){
+              if (JSON.parse(data).username === user.username) {
+                next();
               } else {
                 return res.json(400, errors.incorrectApiKey);
               }
             });
-        };
-
-        oauth2.getOAuthAccessToken(null, oauthOptions, clientGrantCB);
+          }
+        );
+        authGet.on('error', function(e){
+          return res.json(400, e);
+        });
+        authGet.end();
+      } else {
+        return res.json(400, errors.incorrectApiKey);
       }
     });
 };

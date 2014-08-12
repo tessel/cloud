@@ -14,8 +14,10 @@ require('dotenv').load();
 // If a Node happens to crash, this will be logged to the debug console, and
 // a new Node spun up to take it's place.
 
-var cluster = require('cluster'),
-    cpus = require('os').cpus();
+var cluster = require('cluster'), // node cluster library
+    cpus = require('os').cpus(),
+    db = require("../models"),
+    Tessel = db.Tessel;
 
 // The Debug module will only print to the console conditionally based on the
 // setting of the 'DEBUG' environment variable. By default, it no-ops.
@@ -35,6 +37,16 @@ var handleWorkerMessage = function (worker) {
     switch (data.command) {
       case 'add':
         cluster.connections[worker.id].push(data.data);
+        Tessel
+          .findOrCreate({ device_id: data.data }, {
+            connected: true
+          })
+          .success(function(tessel, created){
+            if (!created) {
+              tessel.connected = true;
+              tessel.save();
+            }
+          });
         break;
 
       case 'delete':
@@ -42,7 +54,20 @@ var handleWorkerMessage = function (worker) {
         for (var i = 0; i < connections.length; i++) {
           if (connections[i] === data.data) { connections.splice(i, 1); }
         }
+        Tessel
+          .find({where: {device_id: data.data}})
+          .success(function(tessel){
+            if (tessel){
+              tessel.connected = false;
+              tessel.save();
+            }
+          });
+        break;
 
+      case 'network':
+        break;
+
+      case 'log':
         break;
 
       default:

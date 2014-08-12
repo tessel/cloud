@@ -13,10 +13,13 @@ var express = require('express')
   , bodyParser = require('body-parser')
   , cookieParser = require('cookie-parser')
   , multipart = require('connect-multiparty')
+  , accepts = require('accepts')
   , session = require('express-session')
   , rem = require('rem')
+  ;
 
-var routes = require('./routes');
+var apiRouter = require('./routes/api_routes'),
+    oauthRouter = require('./routes/oauth_routes');
 
 // connect to and synchronize database
 var db = require('./models');
@@ -25,7 +28,7 @@ db.sequelize
   .sync()
   .complete(function(err) {
     if (!!err) {
-      console.log(err);
+      debug(err);
       process.exit();
     }
 
@@ -46,15 +49,15 @@ app.use(session({
 // Create our API client.
 var tesselauth = rem.createClient({
   "id": "tessel.io",
-  "base": "https://auth.tessel.io",
+  "base": process.env.OAUTH_SERVER,
   "auth": {
     "type": "oauth",
     "version": "2.0",
-    "base": "https://auth.tessel.io",
+    "base": process.env.OAUTH_SERVER,
     "authorizePath": "/oauth/authorise",
     "tokenPath": "/oauth/token",
     "params": {
-      "scope": ["https://tessel-grant"],
+      "scope": [process.env.GRANT_TYPE],
       "response_type": "code"
     },
     "validate": "/profile",
@@ -62,44 +65,28 @@ var tesselauth = rem.createClient({
     "oobVerifier": false,
   },
 }, {
-  key: process.env.OAUTH_KEY,
-  secret: process.env.OAUTH_SECRET,
+  key: process.env.CLIENT_ID,
+  secret: process.env.CLIENT_SECRET,
 });
+
+app.use('/api*', function(req, res, next) {
+  var accept = accepts(req);
+  if (accept.types('application/vnd.tessel.remote.v1')) {
+    next();
+  } else {
+    return res.json(400, {
+      message: "Incorrect API version"
+    });
+  }
+});
+
 
 // Create the OAuth interface.
 var oauth = rem.oauth(tesselauth, process.env.OAUTH_REDIRECT);
-
-// oauth.middleware intercepts the callback url that we set when we
-// created the oauth middleware.
-app.use(oauth.middleware(function (req, res, next) {
-  console.log("User is now authenticated.");
-  res.redirect('/profile');
-}));
-
-// oauth.login() is a route to redirect to the OAuth login endpoint.
-// Use oauth.login({ scope: ... }) to set your oauth scope(s).
-app.get('/login', oauth.login());
-
-// Logout URL clears the user's session.
-app.get('/logout', oauth.logout(function (req, res) {
-  res.redirect('/profile');
-}));
-
-app.get('/profile', function (req, res) {
-  var user = oauth.session(req);
-  if (!user) {
-    return res.redirect(301, "/login");
-  }
-
-  // Make an authenticated request to oauth server for our info.
-  user.json('users/profile').get(function (err, json, last) {
-    // json contains "username", "email", "name", and "apiKey"
-    res.send('<h1>Hello ' + json.email + '!</h1>');
-  });
-});
+app.use('/', oauthRouter(oauth));
 
 // Default routes.
-app.use('/', routes);
+app.use('/', apiRouter);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
