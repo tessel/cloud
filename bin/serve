@@ -102,7 +102,7 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  var tcp = require('../tcp'),
+  var tcp = require('../worker'),
       port = process.env.TCP_PORT || 3001;
 
   debug('tcp server %s starting', process.pid);

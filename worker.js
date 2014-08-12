@@ -2,8 +2,7 @@ require('dotenv').load();
 
 var debug = require('debug')('tcp:' + process.pid);
 
-var cluster = require('cluster'),
-    net     = require('net'),
+var net     = require('net'),
     fs      = require('fs');
 
 var through = require('through');

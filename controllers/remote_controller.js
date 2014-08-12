@@ -7,7 +7,7 @@ var db = require("../models"),
 
 var RemoteController = {}
 
-var cluster = require('../cluster');
+var cluster = require('../send');
 
 var errors = {
   notFound: {
