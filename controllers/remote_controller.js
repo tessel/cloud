@@ -1,5 +1,5 @@
 var fs = require('fs'),
-    crypto = require('crypto');
+    crc = require('crc');
 
 var db = require("../models"),
     User = db.User,
@@ -7,7 +7,7 @@ var db = require("../models"),
 
 var RemoteController = {}
 
-var cluster = require('../send');
+var sender = require('../workers/send');
 
 var errors = {
   notFound: {
@@ -52,7 +52,7 @@ RemoteController.code = function(req, res) {
       return res.json(403, errors.notFound);
     }
 
-    var flash = req.body.flash == 'true' ? true : false;
+    var command = req.body.flash == 'true' ? 0x01 : 0x02;
 
     var users = tessel.users.filter(function(user) {
       return user.apiKey === req.apiKey;
@@ -66,31 +66,38 @@ RemoteController.code = function(req, res) {
     file = req.files['script_tar'];
 
     if (!file) {
-      res.json(400, errors.noFile)
+      return res.json(400, errors.noFile)
     }
 
-    if (cluster.isConnected(tessel.device_id)) {
-      cluster.sendFile(tessel.device_id, file.path);
+    if (sender.isConnected(tessel.device_id)) {
 
-      var hash = crypto.createHash('md5'),
+      var crc32 = new crc.CRC32(),
           stream = fs.createReadStream(file.path);
 
       stream.on('data', function (data) {
-        hash.update(data, 'utf8');
+        crc32.update(data, 'utf8');
       });
 
       stream.on('end', function () {
+
+        var sum = crc32.checksum();
         tessel.lastPush = new Date();
-        tessel.lastPushChecksum = hash.digest('hex');
+        tessel.lastPushChecksum = crc32.hexdigest();
         tessel.lastPushUser = req.user.id;
         tessel.lastPushScript = file.name;
         tessel.save();
 
-        res.json({
+        fs.stat(file.path, function(err, stat){
+          sender.sendFile(tessel.device_id, command, stat.size, sum, file.path);
+        });
+
+
+        return res.json({
           ok: true,
           data: "Your code is uploading to your Tessel now."
-        })
+        });
       });
+
     } else {
       return res.json(404, errors.unreachable);
     }
@@ -99,11 +106,41 @@ RemoteController.code = function(req, res) {
 };
 
 RemoteController.network = function(req, res) {
-  return res.json(404, errors.unimplemented);
+  var self = this;
+
+  Tessel.find({
+    include: [ User ],
+    where: { device_id: req.params.device_id, }
+  }).success(function(tessel) {
+    if (!tessel) {
+      return res.json(403, errors.notFound);
+    }
+
+    sender.send(tessel.device_id, 0x07);
+    return res.json({
+      ok: true,
+      data: "Request sent"
+    });
+  });
 };
 
 RemoteController.log = function(req, res) {
-  return res.json(404, errors.unimplemented);
+  var self = this;
+
+  Tessel.find({
+    include: [ User ],
+    where: { device_id: req.params.device_id, }
+  }).success(function(tessel) {
+    if (!tessel) {
+      return res.json(403, errors.notFound);
+    }
+
+    sender.send(tessel.device_id, 0x08);
+    return res.json({
+      ok: true,
+      data: "Request sent"
+    });
+  });
 }
 
 module.exports = RemoteController;
