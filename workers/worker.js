@@ -14,6 +14,7 @@ var onConnection = function onConnection(socket) {
 
   var deviceId;
 
+  // send appropriate messages on to master node
   socket.on('data', function(chunk) {
     var data = chunk.toString();
 

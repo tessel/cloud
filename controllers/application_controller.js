@@ -1,5 +1,8 @@
 'use strict';
-
+/*
+Controller validating API key sent with requests
+Stores associated User in the request
+*/
 var OAuth2 = require('oauth').OAuth2,
     http = require('http'),
     oauthConfig = require('../config/oauth');

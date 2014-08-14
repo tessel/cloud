@@ -44,6 +44,7 @@ module.exports.handleWorkerMessage = function handleWorkerMessage(worker) {
       return;
     }
 
+    // incoming command sent from worker.js where socket is listening
     switch (data.command) {
       case 'add':
         cluster.connections[worker.id].push(data.data);
@@ -98,6 +99,7 @@ module.exports.send = function send(tesselId, command) {
 
   var worker = cluster.workers[node];
 
+  // command packet without file
   var data = new Buffer(5);
   data.writeUInt8(command, 0);
   data.writeUInt32LE(0x00, 1);
@@ -113,6 +115,7 @@ module.exports.sendFile = function sendFile(tesselId, command, fileSize, crc, fi
     return false;
   }
 
+  // command packet with file
   var worker = cluster.workers[node];
   var data = new Buffer(9);
   data.writeUInt8(command, 0);

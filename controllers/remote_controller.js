@@ -1,3 +1,6 @@
+/*
+Controller for routes requiring action on a Tessel
+*/
 var fs = require('fs'),
     crc = require('crc');
 
@@ -52,23 +55,28 @@ RemoteController.code = function(req, res) {
       return res.json(403, errors.notFound);
     }
 
+    // 'true'/0x01 for push, 'false'/0x02 for run
     var command = req.body.flash == 'true' ? 0x01 : 0x02;
 
+    // is this user authorized to push code to this Tessel
     var users = tessel.users.filter(function(user) {
       return user.apiKey === req.apiKey;
     });
-
     if (users.length === 0) {
       return res.json(403, errors.notFound);
     }
 
+    // Get the sent file
     var file;
+    // terrible name, should be changed
+    // sounds like Reptar's playwright cousin
     file = req.files['script_tar'];
 
     if (!file) {
       return res.json(400, errors.noFile)
     }
 
+    // if Tessel is actively connected to TCP cluster
     if (sender.isConnected(tessel.device_id)) {
 
       var crc32 = new crc.CRC32(),
@@ -80,6 +88,7 @@ RemoteController.code = function(req, res) {
 
       stream.on('end', function () {
 
+        // save all this new data about the Tessel
         var sum = crc32.checksum();
         tessel.lastPush = new Date();
         tessel.lastPushChecksum = crc32.hexdigest();
@@ -87,6 +96,7 @@ RemoteController.code = function(req, res) {
         tessel.lastPushScript = file.name;
         tessel.save();
 
+        // tell a worker to send the file along
         fs.stat(file.path, function(err, stat){
           sender.sendFile(tessel.device_id, command, stat.size, sum, file.path);
         });
