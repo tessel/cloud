@@ -76,3 +76,8 @@ To get a more BDD-style output:
 
 The support files live under `test/support`, while the actual tests cases are in
 `test/specs`.
+
+
+### License
+
+MIT or Apache 2.0, at your option.
