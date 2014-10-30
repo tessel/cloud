@@ -53,6 +53,8 @@ Cloud app. You can either run this directly or via the make command:
     ./bin/serve
     make serve
 
+Once the app is running you can visit `http://127.0.0.1:3000/login` which should bounce you through the oauth server and then be happy.
+
 To get more information about what's happening, set the `DEBUG` environment
 variable. By default very little is logged to the console. A suggested
 configuration for development might look like the following:
