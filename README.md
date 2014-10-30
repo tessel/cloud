@@ -46,7 +46,9 @@ a migration:
 
 ## Running
 
-The app is started via the `bin/serve` binary, which spins up both parts of the
+You'll need to first be also running the [oauth server](https://github.com/tessel/oauth) locally to use the default .env.example settings.
+
+The app itself is started via the `bin/serve` binary, which spins up both (HTTP and TCP) parts of the
 Cloud app. You can either run this directly or via the make command:
 
     # both of these accomplish the same goal:
