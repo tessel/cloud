@@ -84,12 +84,7 @@ ApplicationController.authenticate = function(req, res, next) {
         req.user = user;
         var reqPath = '/' + oauthConfig.profilePath +
           '?access_token=' + user.accessToken;
-        var authGet = http.get(
-          {
-            host: oauthConfig.server,
-            port: 3002,
-            path: reqPath
-          } , function (authRes) {
+        var authGet = http.get(oauthConfig.server + reqPath, function (authRes) {
             authRes.setEncoding('utf8');
             authRes.on('data', function(data){
               if (JSON.parse(data).username === user.username) {
