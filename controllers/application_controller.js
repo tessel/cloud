@@ -7,19 +7,6 @@ var OAuth2 = require('oauth').OAuth2,
 var db = require('../models'),
     User = db.User;
 
-// HACK: dump database table to show API keys
-User
-  .findAll()
-  .error(function (e) {
-    console.error(HERE, e);
-  })
-  .success(function (arr) {
-    arr.forEach(function (user) {
-      console.log("USER", user.username, user.apiKey);
-    });
-  });
-
-
 var errors = {
   incorrectApiKey: {
     ok: false,
