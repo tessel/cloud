@@ -44,7 +44,17 @@ OauthController.prototype.profile = function(req, res) {
   // Make an authenticated request to oauth server for our info.
   user.json('users/profile').get(function (err, json, last) {
     // json contains "username", "email", "name", and "apiKey"
-    res.send('<h1>Hello ' + json.email + '!</h1>');
+    User
+      .find({ email: json.email })
+      .error(function(err){
+        debug(err);
+        return res.json(500, errors.authentication);
+      })
+      .success(function(db_user){
+        var util= require('util'),
+            html = util.format("<h1>Hello %s!</h1>Your API key is: %s", db_user.email, db_user.apiKey);
+        res.send(html);
+      });
   });
 }
 
