@@ -2,8 +2,7 @@ require('dotenv').load();
 
 var debug = require('debug')('tcp:' + process.pid);
 
-var cluster = require('cluster'),
-    net     = require('net'),
+var net     = require('net'),
     fs      = require('fs');
 
 var through = require('through');
@@ -15,6 +14,7 @@ var onConnection = function onConnection(socket) {
 
   var deviceId;
 
+  // send appropriate messages on to master node
   socket.on('data', function(chunk) {
     var data = chunk.toString();
 
@@ -24,6 +24,10 @@ var onConnection = function onConnection(socket) {
 
       // we use Node's built-in IPC to send data back to the cluster master
       process.send({command: 'add', data: deviceId})
+    } else if (/^network: (.*)$/.test(data)) {
+      // NRY - needs a strategy for operating on the Tessel side
+    } else if (/^log: (.*)$/.test(data)) {
+      // NRY - needs a strategy for operating on the Tessel side
     }
 
     debug('received: %s', data);
@@ -51,7 +55,9 @@ var send = function send(device, data) {
   connection.write(data);
 };
 
-var sendFile = function sendFile(device, filename) {
+var sendFile = function sendFile(device, header, filename) {
+
+  console.log('Write file with header', new Buffer(header));
   var connection = connections[device];
 
   if (!connection) {
@@ -61,12 +67,11 @@ var sendFile = function sendFile(device, filename) {
   var stream = fs.createReadStream(filename),
       write = function(chunk) { connection.write(chunk); },
       end = function() {
-        connection.write('file-end');
         debug('finished streaming file to %s', device);
       };
 
   debug('starting to stream file to %s', device);
-  connection.write('file-start');
+  connection.write(new Buffer(header));
 
   // Using the `through` module, we stream the file from disk to the tessel over
   // the TCP socket
@@ -84,7 +89,7 @@ process.on('message', function(message) {
       break;
 
     case 'sendFile':
-      sendFile(message.device, message.data)
+      sendFile(message.device, message.data, message.file)
       break;
 
     default:

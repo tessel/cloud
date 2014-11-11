@@ -1,5 +1,7 @@
 'use strict';
-
+/*
+Controller for generating new API keys
+*/
 var db = require('../models'),
     User = db.User;
 

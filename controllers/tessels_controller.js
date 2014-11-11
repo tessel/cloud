@@ -1,3 +1,6 @@
+/*
+Route controller for requests for Tessel CRUD
+*/
 var db = require('../models'),
     Tessel = db.Tessel,
     User = db.User;

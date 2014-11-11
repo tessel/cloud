@@ -16,8 +16,7 @@ require('dotenv').load();
 
 var cluster = require('cluster'), // node cluster library
     cpus = require('os').cpus(),
-    db = require("../models"),
-    Tessel = db.Tessel;
+    sender = require('../workers/send');
 
 // The Debug module will only print to the console conditionally based on the
 // setting of the 'DEBUG' environment variable. By default, it no-ops.
@@ -27,54 +26,6 @@ var cluster = require('cluster'), // node cluster library
 //
 //    $ DEBUG=master,tcp*,api bin/serve
 var debug = require('debug')('master');
-
-var handleWorkerMessage = function (worker) {
-  return function handleWorkerMessage(data) {
-    if (!data.command) {
-      return;
-    }
-
-    switch (data.command) {
-      case 'add':
-        cluster.connections[worker.id].push(data.data);
-        Tessel
-          .findOrCreate({ device_id: data.data }, {
-            connected: true
-          })
-          .success(function(tessel, created){
-            if (!created) {
-              tessel.connected = true;
-              tessel.save();
-            }
-          });
-        break;
-
-      case 'delete':
-        var connections = cluster.connections[worker.id];
-        for (var i = 0; i < connections.length; i++) {
-          if (connections[i] === data.data) { connections.splice(i, 1); }
-        }
-        Tessel
-          .find({where: {device_id: data.data}})
-          .success(function(tessel){
-            if (tessel){
-              tessel.connected = false;
-              tessel.save();
-            }
-          });
-        break;
-
-      case 'network':
-        break;
-
-      case 'log':
-        break;
-
-      default:
-        return;
-    }
-  }
-}
 
 if (cluster.isMaster) {
   var app = require('../app'),
@@ -93,7 +44,7 @@ if (cluster.isMaster) {
   cpus.forEach(function() {
     var worker = cluster.fork();
     cluster.connections[worker.id] = [];
-    worker.on('message', handleWorkerMessage(worker));
+    worker.on('message', sender.handleWorkerMessage(worker));
   });
 
   cluster.on('exit', function(worker, code, signal) {
@@ -102,7 +53,7 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  var tcp = require('../tcp'),
+  var tcp = require('../workers/worker'),
       port = process.env.TCP_PORT || 3001;
 
   debug('tcp server %s starting', process.pid);

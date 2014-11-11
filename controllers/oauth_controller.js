@@ -1,3 +1,7 @@
+/*
+Route Oauth/login requests/callbacks
+Can be obsolete if we switch to SSO like the forum
+*/
 var db = require('../models'),
     User = db.User;
 
