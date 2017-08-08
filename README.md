@@ -2,6 +2,8 @@
 
 # Cloud
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/tessel/cloud.svg)](https://greenkeeper.io/)
+
 This app provides a TCP cluster backend for Tessels to connect to, as well as an API to
 allow users to communicate with Tessels.
 
